@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-               BuildableName = "ffmpeg"
-               BlueprintName = "ffmpeg"
+               BuildableName = "ProcessTask"
+               BlueprintName = "ProcessTask"
                ReferencedContainer = "container:FFmpegTask.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-            BuildableName = "ffmpeg"
-            BlueprintName = "ffmpeg"
+            BuildableName = "ProcessTask"
+            BlueprintName = "ProcessTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-            BuildableName = "ffmpeg"
-            BlueprintName = "ffmpeg"
+            BuildableName = "ProcessTask"
+            BlueprintName = "ProcessTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
