@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-               BuildableName = "ProcessTask"
-               BlueprintName = "ProcessTask"
+               BlueprintIdentifier = "E1B640AD238A757A006F6502"
+               BuildableName = "FFmpegTask"
+               BlueprintName = "FFmpegTask"
                ReferencedContainer = "container:FFmpegTask.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,12 +44,18 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-            BuildableName = "ProcessTask"
-            BlueprintName = "ProcessTask"
+            BlueprintIdentifier = "E1B640AD238A757A006F6502"
+            BuildableName = "FFmpegTask"
+            BlueprintName = "FFmpegTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y Output.mkv"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -61,9 +67,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E19CFED22377D8DA00499A02"
-            BuildableName = "ProcessTask"
-            BlueprintName = "ProcessTask"
+            BlueprintIdentifier = "E1B640AD238A757A006F6502"
+            BuildableName = "FFmpegTask"
+            BlueprintName = "FFmpegTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

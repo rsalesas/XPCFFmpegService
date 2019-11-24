@@ -106,8 +106,6 @@
 
 #include "libavutil/avassert.h"
 
-const char program_name[] = "ffmpeg";
-const int program_birth_year = 2000;
 
 static FILE *vstats_file;
 
