@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E1B640AD238A757A006F6502"
+               BlueprintIdentifier = "E1B640D8238A8B28006F6502"
                BuildableName = "FFmpegTask"
                BlueprintName = "FFmpegTask"
                ReferencedContainer = "container:FFmpegTask.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1B640AD238A757A006F6502"
+            BlueprintIdentifier = "E1B640D8238A8B28006F6502"
             BuildableName = "FFmpegTask"
             BlueprintName = "FFmpegTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
@@ -67,7 +67,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1B640AD238A757A006F6502"
+            BlueprintIdentifier = "E1B640D8238A8B28006F6502"
             BuildableName = "FFmpegTask"
             BlueprintName = "FFmpegTask"
             ReferencedContainer = "container:FFmpegTask.xcodeproj">
