@@ -5,12 +5,16 @@
 //  Created by Robert Salesas on 24/11/19.
 //  Copyright © 2019 Robert Salesas. All rights reserved.
 //
+//  This is a wrapper around the ffmpeg and ffprobe (and possibly one day ffplay) programs.
+//  It sets certain options to control output, and intercept it before passing it to the calling
+//  program (meant to be an XPC service) in JSON format.
+//
 
 import Foundation
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
-//            os_log("Insufficent arguments – %@", CommandLine.arguments)
 
 
+// This class is a non-thread safe singleton - be careful!
 class FFmpegTask {
     
     // Flags for running processes  // TODO: make it "nostats"
@@ -21,20 +25,24 @@ class FFmpegTask {
     static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
         
 
+    // Singleton - do not access this class in any other way.
     static let Application = FFmpegTask()
     
     let progressPipe = Pipe()
+    
+    let standardGroup = DispatchGroup()
     let defaultStandardOutputPipe = Pipe()
     let proxyStandardOutputPipe = Pipe()
     let defaultStandardErrorPipe = Pipe()
     let proxyStandardErrorPipe = Pipe()
 
+    
     // Prepare the environment for calling the ffmpeg libraries
     private init() {
         // Disable colour output for the ffmpeg libraries
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
 
-        // Prepare the progress code
+        // Prepare the progress code - used only for -ffmpeg mode, not -ffprobe mode
          progressPipe.fileHandleForReading.readabilityHandler = processProgress
         
         // Copy the current std to the default std pipe for holding
@@ -50,8 +58,21 @@ class FFmpegTask {
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
         dup2(FileHandle.nullDevice.fileDescriptor, FileHandle.standardOutput.fileDescriptor)
         
-        // To reset it back to the default stderr handle use the following:
-        // dup2(defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
+        // Prepare the exit handler to ensure that the above handles are all flushed and finished
+        // In order for the C function closure to work, variables must be static, therefore this
+        // is a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits from
+        // a billion places, seemingly randomly.
+        atexit {
+            do {
+                FFmpegTask.Application.standardGroup.wait()
+                
+                try FFmpegTask.Application.defaultStandardOutputPipe.fileHandleForWriting.synchronize()
+                try FFmpegTask.Application.defaultStandardErrorPipe.fileHandleForWriting.synchronize()
+            }
+            catch {
+                os_log("Unable to flush stdout and stderr filehandles")
+            }
+        }
     }
         
     // Error output
@@ -69,20 +90,28 @@ class FFmpegTask {
     }
     
     func processProxyStandardOutputPipe(fileHandle: FileHandle) {
+        standardGroup.enter()
+        defer { standardGroup.leave() }
+        
         let data = fileHandle.availableData
         defaultStandardOutputPipe.fileHandleForWriting.write(data)
-        sleep(5)
     }
     
     func processProxyStandardErrorPipe(fileHandle: FileHandle) {
+        standardGroup.enter()
+        defer { standardGroup.leave() }
+
         let data = fileHandle.availableData
         defaultStandardErrorPipe.fileHandleForWriting.write(data)
     }
     
     func processProgress(fileHandle: FileHandle) {
+        standardGroup.enter()
+        defer { standardGroup.leave() }
+
         let data = fileHandle.availableData
         guard let message = String(data: data, encoding: .utf8),
-            let progressRegEx = try? NSRegularExpression(pattern: #"^.*=.*[^=]*$"#, options:NSRegularExpression.Options.anchorsMatchLines) else {
+            let progressRegEx = try? NSRegularExpression(pattern: #"(?<Name>^.*)=(?<Value>.*[^=]*)$"#, options:NSRegularExpression.Options.anchorsMatchLines) else {
             os_log("Unable to process progress information.")
             return
         }
@@ -90,10 +119,13 @@ class FFmpegTask {
         defaultStandardErrorPipe.fileHandleForWriting.write(data)
 
         let matches = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count))
-        matches.forEach { match in
-            print("Match: \(match)")
-        }
         
+        matches.forEach { match in
+            // ! is bad, except here it cannot fail if the RegEx is correct as the group names will match.
+            let name = message[Range(match.range(withName: "Name"), in: message)!]
+            let value = message[Range(match.range(withName: "Value"), in: message)!]
+            print("Name: \(name)\nValue: \(value)")
+        }
     }
         
     func processRequest(_ arguments: [String]) -> Int32 {
@@ -130,6 +162,5 @@ class FFmpegTask {
 
 }
 
-var exitCode = FFmpegTask.Application.processRequest(CommandLine.arguments)
-sleep(5)
-exit(exitCode)
+
+exit(FFmpegTask.Application.processRequest(CommandLine.arguments))
