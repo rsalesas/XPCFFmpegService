@@ -18,7 +18,27 @@ class FFmpegTask {
     
     static let Application = FFmpegTask()
     
-    private init() { }
+    let progressPipe = Pipe()
+    let defaultStandardOutputPipe = Pipe()
+    let proxyStandardOutputPipe = Pipe()
+    let defaultStandardErrorPipe = Pipe()
+    let proxyStandardErrorPipe = Pipe()
+
+    // Prepare the environment for calling the ffmpeg libraries
+    private init() {
+        // Disable colour output for the ffmpeg libraries
+        setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
+
+        // Prepare the progress code
+         progressPipe.fileHandleForReading.readabilityHandler = processProgress
+        
+        // Copy the current stderr to the default stderr pipe for holding
+        dup2(FileHandle.standardError.fileDescriptor, defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor)
+        
+        // Reset stderr to the proxy stderr pipe to allow intercepting and redirect to processor
+        dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
+        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProgress
+    }
         
     // Flags for running processes
     static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
@@ -43,37 +63,24 @@ class FFmpegTask {
     
     func processProgress(fileHandle: FileHandle) {
         let data = fileHandle.availableData
-        print(String(data: data, encoding: .utf8) ?? "")
+        print("Print Progress:\n\n" + (String(data: data, encoding: .utf8) ?? ""))
     }
-    
-    func processRequest() -> Int32 {
-
+        
+    func processRequest(_ arguments: [String]) -> Int32 {
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't failw
-        if CommandLine.arguments.count < 5 {
-            printError("Insufficent arguments \(CommandLine.arguments)")
+        if arguments.count < 5 {
+            printError("Insufficent arguments \(arguments)")
             return EXIT_FAILURE
         }
-        
-        // Disable colour output for the ffmpeg libraries
-        setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
-               
-        // Redirect StdOut and StdErr to JSON Processor
-        //var standardError = FileHandle.standardError
-        //freopen("newout", "w+", stderr)
-        //FileHandle.standardError = progressHandle
-        
+                               
         // Check the request to determine what service to call
-        var args = CommandLine.arguments
+        var args = arguments
         if args[1] == "-ffmpeg" {
-            // Prepare the progress code
-            let progressPipe: Pipe = Pipe()
-
-            progressPipe.fileHandleForReading.readabilityHandler = processProgress
-            
             // prepare the arguments for ffmpeg
             args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegTask.FFmpegExcludeFlags.contains($0) } + FFmpegTask.FFmpegFlags +
-                ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
-            
+                //["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
+                ["-progress", "pipe:2"]
+
             // Call the C function with the arguments
             var cargs = args.map { strdup($0) }
             return ffmpeg(Int32(cargs.count), &cargs)
@@ -94,4 +101,4 @@ class FFmpegTask {
 
 }
 
-exit(FFmpegTask.Application.processRequest())
+exit(FFmpegTask.Application.processRequest(CommandLine.arguments))
