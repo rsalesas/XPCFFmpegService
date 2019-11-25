@@ -12,29 +12,41 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
 // TODO: Consider using freopen to override stderr / stdout and do the processing here, returning only JSON through the original values (which will need to be saved here)
-
+// Might be possible to open a new pipe for progress and send it there "pipe:5" for example, then listen to it and convert the progress to a JSON output on STDOUT
 
 class FFmpegTask {
     
-    static let FFmpegFlags = ["-hide_banner", "-nostats", "-progress", "pipe:2", "-loglevel", "repeat+level+warning", "-nostdin"]
+    static let Application = FFmpegTask()
+    
+    private init() { }
+        
+    // Flags for running processes
+    static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
     static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
 
     static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
     static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
         
-    private enum FFmpegTaskErrorType: String {
+    // Error output
+    private enum ErrorType: String {
         case error = "[Error]"
         case warning = "[Warning]"
     }
     
-    private static func printError(_ message: String, error: FFmpegTaskErrorType = FFmpegTaskErrorType.error) {
+    // TODO: Convert this to output JSON to original StdErr
+    private func printError(_ message: String, error: FFmpegTask.ErrorType = FFmpegTask.ErrorType.error) {
         let messageLn = error.rawValue + " " + message + "\n"
         if let data = messageLn.data(using: .utf8)  {
             FileHandle.standardError.write(data)
         }
     }
     
-    static func processRequest() -> Int32 {
+    func processProgress(fileHandle: FileHandle) {
+        let data = fileHandle.availableData
+        print(String(data: data, encoding: .utf8) ?? "")
+    }
+    
+    func processRequest() -> Int32 {
 
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't failw
         if CommandLine.arguments.count < 5 {
@@ -44,11 +56,23 @@ class FFmpegTask {
         
         // Disable colour output for the ffmpeg libraries
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
-
+               
+        // Redirect StdOut and StdErr to JSON Processor
+        //var standardError = FileHandle.standardError
+        //freopen("newout", "w+", stderr)
+        //FileHandle.standardError = progressHandle
+        
+        // Check the request to determine what service to call
         var args = CommandLine.arguments
         if args[1] == "-ffmpeg" {
+            // Prepare the progress code
+            let progressPipe: Pipe = Pipe()
+
+            progressPipe.fileHandleForReading.readabilityHandler = processProgress
+            
             // prepare the arguments for ffmpeg
-            args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegExcludeFlags.contains($0) } + FFmpegFlags
+            args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegTask.FFmpegExcludeFlags.contains($0) } + FFmpegTask.FFmpegFlags +
+                ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
             
             // Call the C function with the arguments
             var cargs = args.map { strdup($0) }
@@ -56,7 +80,7 @@ class FFmpegTask {
             
         } else if args[1] == "-ffprobe" {
             // Prepare the arguments for ffprobe
-            args = [args[0]] + (args[2...args.count-1]).filter { !FFprobeExcludeFlags.contains($0) } + FFprobeFlags
+            args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegTask.FFprobeExcludeFlags.contains($0) } + FFmpegTask.FFprobeFlags
             
             // Call the C function with the arguments
             var cargs = args.map { strdup($0) }
@@ -70,4 +94,4 @@ class FFmpegTask {
 
 }
 
-exit(FFmpegTask.processRequest())
+exit(FFmpegTask.Application.processRequest())
