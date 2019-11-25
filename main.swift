@@ -47,6 +47,9 @@ class FFmpegTask {
         dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
         proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProxyStandardErrorPipe
         
+        // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
+        dup2(FileHandle.nullDevice.fileDescriptor, FileHandle.standardOutput.fileDescriptor)
+        
         // To reset it back to the default stderr handle use the following:
         // dup2(defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
     }
@@ -68,6 +71,7 @@ class FFmpegTask {
     func processProxyStandardOutputPipe(fileHandle: FileHandle) {
         let data = fileHandle.availableData
         defaultStandardOutputPipe.fileHandleForWriting.write(data)
+        sleep(5)
     }
     
     func processProxyStandardErrorPipe(fileHandle: FileHandle) {
@@ -77,8 +81,19 @@ class FFmpegTask {
     
     func processProgress(fileHandle: FileHandle) {
         let data = fileHandle.availableData
-        //print(String(data: data, encoding: .utf8) ?? "")
+        guard let message = String(data: data, encoding: .utf8),
+            let progressRegEx = try? NSRegularExpression(pattern: #"^.*=.*[^=]*$"#, options:NSRegularExpression.Options.anchorsMatchLines) else {
+            os_log("Unable to process progress information.")
+            return
+        }
+        
         defaultStandardErrorPipe.fileHandleForWriting.write(data)
+
+        let matches = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count))
+        matches.forEach { match in
+            print("Match: \(match)")
+        }
+        
     }
         
     func processRequest(_ arguments: [String]) -> Int32 {
@@ -115,4 +130,6 @@ class FFmpegTask {
 
 }
 
-exit(FFmpegTask.Application.processRequest(CommandLine.arguments))
+var exitCode = FFmpegTask.Application.processRequest(CommandLine.arguments)
+sleep(5)
+exit(exitCode)
