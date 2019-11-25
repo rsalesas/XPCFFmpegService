@@ -11,11 +11,16 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 //            os_log("Insufficent arguments – %@", CommandLine.arguments)
 
 
-// TODO: Consider using freopen to override stderr / stdout and do the processing here, returning only JSON through the original values (which will need to be saved here)
-// Might be possible to open a new pipe for progress and send it there "pipe:5" for example, then listen to it and convert the progress to a JSON output on STDOUT
-
 class FFmpegTask {
     
+    // Flags for running processes  // TODO: make it "nostats"
+    static let FFmpegFlags = ["-hide_banner", "-stats", "-loglevel", "repeat+level+warning", "-nostdin"]
+    static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
+
+    static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
+    static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
+        
+
     static let Application = FFmpegTask()
     
     let progressPipe = Pipe()
@@ -32,20 +37,19 @@ class FFmpegTask {
         // Prepare the progress code
          progressPipe.fileHandleForReading.readabilityHandler = processProgress
         
-        // Copy the current stderr to the default stderr pipe for holding
+        // Copy the current std to the default std pipe for holding
+        dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
         dup2(FileHandle.standardError.fileDescriptor, defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor)
-        
-        // Reset stderr to the proxy stderr pipe to allow intercepting and redirect to processor
-        dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
-        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProgress
-    }
-        
-    // Flags for running processes
-    static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
-    static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
 
-    static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
-    static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
+        // Reset std to the proxy std pipe to allow intercepting and redirect to processor
+        dup2(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardOutput.fileDescriptor)
+        proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processProxyStandardOutputPipe
+        dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
+        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProxyStandardErrorPipe
+        
+        // To reset it back to the default stderr handle use the following:
+        // dup2(defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
+    }
         
     // Error output
     private enum ErrorType: String {
@@ -61,9 +65,20 @@ class FFmpegTask {
         }
     }
     
+    func processProxyStandardOutputPipe(fileHandle: FileHandle) {
+        let data = fileHandle.availableData
+        defaultStandardOutputPipe.fileHandleForWriting.write(data)
+    }
+    
+    func processProxyStandardErrorPipe(fileHandle: FileHandle) {
+        let data = fileHandle.availableData
+        defaultStandardErrorPipe.fileHandleForWriting.write(data)
+    }
+    
     func processProgress(fileHandle: FileHandle) {
         let data = fileHandle.availableData
-        print("Print Progress:\n\n" + (String(data: data, encoding: .utf8) ?? ""))
+        //print(String(data: data, encoding: .utf8) ?? "")
+        defaultStandardErrorPipe.fileHandleForWriting.write(data)
     }
         
     func processRequest(_ arguments: [String]) -> Int32 {
@@ -78,8 +93,7 @@ class FFmpegTask {
         if args[1] == "-ffmpeg" {
             // prepare the arguments for ffmpeg
             args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegTask.FFmpegExcludeFlags.contains($0) } + FFmpegTask.FFmpegFlags +
-                //["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
-                ["-progress", "pipe:2"]
+                ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
 
             // Call the C function with the arguments
             var cargs = args.map { strdup($0) }
