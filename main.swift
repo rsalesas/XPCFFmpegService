@@ -14,17 +14,102 @@ import Foundation
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
+// TODO: Move this to a separate file
+class ProgressProperties: Codable {
+    
+    // RegEx pattern to use to parse properties
+    static let Pattern = #"(?:(?:frame\s*=\s*(?<Frame>\d*))\n(?:fps\s*=\s*(?<Fps>[\d\.]*))\n(?:(?:stream_(?<Input>\d)_(?<Stream>\d)_q)\s*=\s*(?<Quality>[-\d\.]*))\n"# + #"(?:bitrate\s*=\s*(?<Bitrate>[\d\.]*)kbits\/s)\n(?:total_size\s*=\s*(?<TotalSize>\d*))\n(?:.*\n)*"# +
+        #"(?:out_time_ms\s*=\s*(?<OutTime>\d*))\n(?:.*\n)*(?:dup_frames\s*=\s*(?<DuplicateFrames>\d*))\n"# +
+        #"(?:drop_frames\s*=\s*(?<DroppedFrames>\d*))\n(?:speed\s*=\s*(?<Speed>\d*)x)\n(?:progress\s*=\s*(?<Progress>.*)))\n*"#
+
+    var frame: Int?
+    var fps: Double?
+    var input: Int?
+    var stream: Int?
+    var quality: Double?
+    var bitrate: Double?
+    var totalSize: Int?
+    var outTime: TimeInterval?
+    var duplicateFrames: Int?
+    var droppedFrames: Int?
+    var speed: Int?
+    var finished: Bool = false
+    
+    init(message: String, values: NSTextCheckingResult) {
+        if let range = Range(values.range(withName: "Frame"), in: message) {
+            frame = Int(message[range])
+        }
+        
+        if let range = Range(values.range(withName: "Fps"), in: message) {
+            fps = Double(message[range])
+        }
+
+        if let range = Range(values.range(withName: "Input"), in: message) {
+            input = Int(message[range])
+        }
+        
+        if let range = Range(values.range(withName: "Stream"), in: message) {
+            stream = Int(message[range])
+        }
+        
+        if let range = Range(values.range(withName: "Quality"), in: message) {
+            quality = Double(message[range])
+        }
+        
+        if let range = Range(values.range(withName: "Bitrate"), in: message) {
+            bitrate = Double(message[range])
+        }
+
+        if let range = Range(values.range(withName: "TotalSize"), in: message) {
+            totalSize = Int(message[range])
+        }
+
+        if let range = Range(values.range(withName: "OutTime"), in: message) {
+            if let ms = TimeInterval(message[range]) {
+                outTime = ms / 1000000.0
+            }
+        }
+
+        if let range = Range(values.range(withName: "DuplicateFrames"), in: message) {
+            duplicateFrames = Int(message[range])
+        }
+
+        if let range = Range(values.range(withName: "DroppedFrames"), in: message) {
+            droppedFrames = Int(message[range])
+        }
+
+        if let range = Range(values.range(withName: "Speed"), in: message) {
+            speed = Int(message[range])
+        }
+        
+        if let range = Range(values.range(withName: "Progress"), in: message) {
+            finished = message[range] != "continue"
+        }
+    }
+    
+    func toJSON() -> String {
+        let jsonEncoder = JSONEncoder()
+        if let jsonData = try? jsonEncoder.encode(self) {
+            let json = String(data: jsonData, encoding: String.Encoding.utf8)
+            return json ?? ""
+        }
+
+        return ""
+    }
+}
+
+
+
 // This class is a non-thread safe singleton - be careful!
 class FFmpegTask {
     
     // Flags for running processes  // TODO: make it "nostats"
-    static let FFmpegFlags = ["-hide_banner", "-stats", "-loglevel", "repeat+level+warning", "-nostdin"]
+    static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
     static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
 
     static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
     static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
-        
-
+            
     // Singleton - do not access this class in any other way.
     static let Application = FFmpegTask()
     
@@ -35,7 +120,7 @@ class FFmpegTask {
     let proxyStandardOutputPipe = Pipe()
     let defaultStandardErrorPipe = Pipe()
     let proxyStandardErrorPipe = Pipe()
-
+    
     
     // Prepare the environment for calling the ffmpeg libraries
     private init() {
@@ -77,15 +162,15 @@ class FFmpegTask {
         
     // Error output
     private enum ErrorType: String {
-        case error = "[Error]"
-        case warning = "[Warning]"
+        case error = "error"
+        case warning = "warning"
     }
     
     // TODO: Convert this to output JSON to original StdErr
     private func printError(_ message: String, error: FFmpegTask.ErrorType = FFmpegTask.ErrorType.error) {
-        let messageLn = error.rawValue + " " + message + "\n"
+        let messageLn = "{\"\(error.rawValue)\":\"\(message)\"}\n"
         if let data = messageLn.data(using: .utf8)  {
-            FileHandle.standardError.write(data)
+            defaultStandardErrorPipe.fileHandleForWriting.write(data)
         }
     }
     
@@ -111,20 +196,16 @@ class FFmpegTask {
 
         let data = fileHandle.availableData
         guard let message = String(data: data, encoding: .utf8),
-            let progressRegEx = try? NSRegularExpression(pattern: #"(?<Name>^.*)=(?<Value>.*[^=]*)$"#, options:NSRegularExpression.Options.anchorsMatchLines) else {
+            let progressRegEx = try? NSRegularExpression(pattern: ProgressProperties.Pattern) else {
             os_log("Unable to process progress information.")
             return
         }
-        
-        defaultStandardErrorPipe.fileHandleForWriting.write(data)
-
-        let matches = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count))
-        
-        matches.forEach { match in
-            // ! is bad, except here it cannot fail if the RegEx is correct as the group names will match.
-            let name = message[Range(match.range(withName: "Name"), in: message)!]
-            let value = message[Range(match.range(withName: "Value"), in: message)!]
-            print("Name: \(name)\nValue: \(value)")
+    
+        // TODO: Move the search to the progress class
+        if let values = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count)).first {
+            let progressProperties = ProgressProperties(message: message, values: values)
+            let json = progressProperties.toJSON()
+            print("\(json)")
         }
     }
         
