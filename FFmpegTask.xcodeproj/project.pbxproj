@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E1B1EC49238D0AF8009DE7C4 /* ProgressProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */; };
+		E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
 		E1B640DC238A8B28006F6502 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B640DB238A8B28006F6502 /* main.swift */; };
 		E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638023866D6D006C7AA5 /* cmdutils.c */; };
 		E1B640E2238A8EF5006F6502 /* ffmpeg_cuvid.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */; };
@@ -66,7 +68,6 @@
 		E14F638423866D6D006C7AA5 /* ffmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ffmpeg.h; sourceTree = "<group>"; };
 		E14F638523866D6D006C7AA5 /* ffmpeg_opt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_opt.c; sourceTree = "<group>"; };
 		E14F638623866D6D006C7AA5 /* ffmpeg_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_filter.c; sourceTree = "<group>"; };
-		E14F63912386C1F3006C7AA5 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../FFmpeg/config.h; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
 		E14F63942387958C006C7AA5 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = ../FFmpeg/lib/libswscale.a; sourceTree = "<group>"; };
 		E14F63952387958C006C7AA5 /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../FFmpeg/lib/libavfilter.a; sourceTree = "<group>"; };
@@ -91,6 +92,9 @@
 		E19CFF9A237927BE00499A02 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		E19CFF9E23792C8700499A02 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		E19CFFA0237932CE00499A02 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressProcessor.swift; sourceTree = "<group>"; };
+		E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegTask.swift; sourceTree = "<group>"; };
+		E1B1EC4C238D0D2F009DE7C4 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		E1B640D2238A8A55006F6502 /* bridging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bridging.h; sourceTree = "<group>"; };
 		E1B640D9238A8B28006F6502 /* FFmpegTask */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FFmpegTask; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B640DB238A8B28006F6502 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -135,10 +139,11 @@
 		E19CFE8E2377D61100499A02 = {
 			isa = PBXGroup;
 			children = (
-				E14F63912386C1F3006C7AA5 /* config.h */,
 				E1B640DB238A8B28006F6502 /* main.swift */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
+				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
+				E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */,
 				E1B64106238A9410006F6502 /* fftools */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
@@ -187,6 +192,7 @@
 		E1B64106238A9410006F6502 /* fftools */ = {
 			isa = PBXGroup;
 			children = (
+				E1B1EC4C238D0D2F009DE7C4 /* config.h */,
 				E14F638023866D6D006C7AA5 /* cmdutils.c */,
 				E14F638223866D6D006C7AA5 /* cmdutils.h */,
 				E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */,
@@ -264,7 +270,9 @@
 				E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */,
 				E1B640E8238A8F07006F6502 /* ffprobe.c in Sources */,
 				E1B64104238A91FD006F6502 /* descriptors.c in Sources */,
+				E1B1EC49238D0AF8009DE7C4 /* ProgressProcessor.swift in Sources */,
 				E1B640E4238A8EFC006F6502 /* ffmpeg_hw.c in Sources */,
+				E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */,
 				E1B640E6238A8F01006F6502 /* ffmpeg_videotoolbox.c in Sources */,
 				E1B640E3238A8EF8006F6502 /* ffmpeg_filter.c in Sources */,
 				E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */,

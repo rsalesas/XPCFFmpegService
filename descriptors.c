@@ -9,7 +9,7 @@
 
 
 const char program_name[] = "FFmpegTask";
-const int program_birth_year = 2019;
+const int program_birth_year = 2020;
 
 void show_help_default(const char *opt, const char *arg)
 {
