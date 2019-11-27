@@ -46,7 +46,7 @@ class FFmpegTask {
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
         
         // Prepare the progress processor
-        progressProcessor = ProgressProcessor(fileDescriptor: defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor, exitGroup: exitGroup)
+        progressProcessor = ProgressProcessor(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting, exitGroup: exitGroup)
         
         // Copy the current std to the default std pipe for holding
         dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
