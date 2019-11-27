@@ -18,32 +18,35 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 class FFmpegTask {
     
     // Flags for running processes  // TODO: make it "nostats"
-    static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
-    static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
+    private static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+info", "-nostdin"]
+    private static let FFmpegExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags"]
 
-    static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
-    static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
+    private static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal"]
+    private static let FFprobeExcludeFlags = ["-h", "-?", "-help", "--help", "-cpuflags", "-byte_binary_prefix"]
+    
+    // RegEx pattern to use to parse errors
+    private static let Pattern = #""#
             
     // Singleton - do not access this class in any other way.
     static let Application = FFmpegTask()
+        
+    private let exitGroup = DispatchGroup()
+    private let defaultStandardOutputPipe = Pipe()
+    private let proxyStandardOutputPipe = Pipe()
+    private let defaultStandardErrorPipe = Pipe()
+    private let proxyStandardErrorPipe = Pipe()
     
-    let progressPipe = Pipe()
-    
-    let standardGroup = DispatchGroup()
-    let defaultStandardOutputPipe = Pipe()
-    let proxyStandardOutputPipe = Pipe()
-    let defaultStandardErrorPipe = Pipe()
-    let proxyStandardErrorPipe = Pipe()
-    
+    private let progressProcessor: ProgressProcessor
+
     
     // Prepare the environment for calling the ffmpeg libraries
     private init() {
         // Disable colour output for the ffmpeg libraries
         unsetenv("AV_LOG_FORCE_COLOR")
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
-
-        // Prepare the progress code - used only for -ffmpeg mode, not -ffprobe mode
-         progressPipe.fileHandleForReading.readabilityHandler = processProgress
+        
+        // Prepare the progress processor
+        progressProcessor = ProgressProcessor(fileDescriptor: defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor, exitGroup: exitGroup)
         
         // Copy the current std to the default std pipe for holding
         dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
@@ -62,10 +65,14 @@ class FFmpegTask {
         // In order for the C function closure to work, variables must be static, therefore this
         // is a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits from
         // a billion places, seemingly randomly.
+        //
+        // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
         atexit {
             do {
-                FFmpegTask.Application.standardGroup.wait()
+                // Wait for any activities to complete
+                FFmpegTask.Application.exitGroup.wait()
                 
+                // Flush out any pending output
                 try FFmpegTask.Application.defaultStandardOutputPipe.fileHandleForWriting.synchronize()
                 try FFmpegTask.Application.defaultStandardErrorPipe.fileHandleForWriting.synchronize()
             }
@@ -90,37 +97,24 @@ class FFmpegTask {
     }
     
     func processProxyStandardOutputPipe(fileHandle: FileHandle) {
-        standardGroup.enter()
-        defer { standardGroup.leave() }
+        exitGroup.enter()
+        defer { exitGroup.leave() }
         
         let data = fileHandle.availableData
         defaultStandardOutputPipe.fileHandleForWriting.write(data)
     }
     
     func processProxyStandardErrorPipe(fileHandle: FileHandle) {
-        standardGroup.enter()
-        defer { standardGroup.leave() }
+        exitGroup.enter()
+        defer { exitGroup.leave() }
 
+        // let data = fileHandle.availableData
+        // defaultStandardErrorPipe.fileHandleForWriting.write(data)
+        
         let data = fileHandle.availableData
-        defaultStandardErrorPipe.fileHandleForWriting.write(data)
-    }
-    
-    func processProgress(fileHandle: FileHandle) {
-        standardGroup.enter()
-        defer { standardGroup.leave() }
-
-        let data = fileHandle.availableData
-        guard let message = String(data: data, encoding: .utf8),
-            let progressRegEx = try? NSRegularExpression(pattern: ProgressProperties.Pattern) else {
-            os_log("Unable to process progress information.")
+        guard let message = String(data: data, encoding: .utf8) else {
+            os_log("Unable to process stderr output.")
             return
-        }
-    
-        // TODO: Move the search to the progress class
-        if let values = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count)).first {
-            let progressProperties = ProgressProperties(message: message, values: values)
-            let json = progressProperties.toJSON()
-            print("\(json)")
         }
     }
         
@@ -136,7 +130,7 @@ class FFmpegTask {
         if args[1] == "-ffmpeg" {
             // prepare the arguments for ffmpeg
             args = [args[0]] + (args[2...args.count-1]).filter { !FFmpegTask.FFmpegExcludeFlags.contains($0) } + FFmpegTask.FFmpegFlags +
-                ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"]
+                ["-progress", "pipe:\(progressProcessor.fileDescriptor)"]
 
             // Call the C function with the arguments
             var cargs = args.map { strdup($0) }
