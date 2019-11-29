@@ -80,9 +80,9 @@ class ProgressProperties: Codable {
 class ProgressProcessor {
     
     // RegEx pattern to use to parse properties
-    private static let Pattern = #"(?:(?:frame\s*=\s*(?<Frame>\d*))\n(?:.*\n)*(?:fps\s*=\s*(?<Fps>[\d\.]*))\n(?:.*\n)*(?:(?:stream_(?<Input>\d)_(?<Stream>\d)_q)\s*=\s*(?<Quality>[-\d\.]*))\n(?:.*\n)*(?:bitrate\s*=\s*(?<Bitrate>[\d\.]*)kbits\/s)\n(?:.*\n)*(?:total_size\s*=\s*(?<TotalSize>\d*))\n(?:.*\n)*(?:.*\n)*(?:out_time_ms\s*=\s*(?<OutTime>\d*))\n(?:.*\n)*(?:dup_frames\s*=\s*(?<DuplicateFrames>\d*))\n(?:.*\n)*(?:drop_frames\s*=\s*(?<DroppedFrames>\d*))\n(?:.*\n)*(?:speed\s*=\s*(?<Speed>\d*)x)\n(?:.*\n)*(?:progress\s*=\s*(?<Progress>.*)))\n*"#
+    private static let Pattern = #"(?:frame=(?<Frame>\d*)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]*)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]*)\n)?(?:(?:.*\n)*bitrate=(?<Bitrate>[\d\.]*)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>\d*)\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>\d*)\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d*)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d*)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>\d*)x\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))"#
 
-    var newlineMarker = Data(bytes: [0x0A], count: 1)
+    let NewlineMarker = Data(bytes: [0x0A], count: 1)
     
     private let progressPipe = Pipe()
     private let exitGroup: DispatchGroup
@@ -107,23 +107,21 @@ class ProgressProcessor {
 
         let data = fileHandle.availableData
         guard let message = String(data: data, encoding: .utf8),
-            let progressRegEx = try? NSRegularExpression(pattern: ProgressProcessor.Pattern) else {
+            let regEx = try? NSRegularExpression(pattern: ProgressProcessor.Pattern),
+            let values = regEx.matches(in: message, options: [], range: NSMakeRange(0, message.count)).first else {
             os_log("Unable to process progress information.")
             return
         }
     
-        if let values = progressRegEx.matches(in: message, options: [], range: NSMakeRange(0, message.count)).first {
-            let progressProperties = ProgressProperties(message: message, values: values)
-            
-            guard let jsonData = try? JSONEncoder().encode(progressProperties) else {
-                os_log("Unable to process progress information.")
-                return
-            }
-
-            defaultStdErr.write(jsonData)
-            defaultStdErr.write(newlineMarker)
-            defaultStdErr.synchronizeFile()
+        let progressProperties = ProgressProperties(message: message, values: values)
+        guard let jsonData = try? JSONEncoder().encode(progressProperties) else {
+            os_log("Unable to process progress information.")
+            return
         }
+
+        defaultStdErr.write(jsonData)
+        defaultStdErr.write(NewlineMarker)
+        defaultStdErr.synchronizeFile()
     }
 
 }
