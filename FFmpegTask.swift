@@ -14,18 +14,20 @@ import Foundation
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
-// TODO: Block -bsfs, -protocols, -formats, -demuxers, etc. and make them top level requests - this would allow us to set a program mode and catch the output
-
-@_cdecl("ffmpegTaskAtExit")
-func AtExit() {
-    fputs("hello from ffmpegTaskAtExit\n", stderr)
-    fflush(stderr)
-}
+// Originally tested instead of using "atexit" - would have required a longjmp out however
+//@_cdecl("ffmpegTaskAtExit")
+//func AtExit() {
+//    fputs("hello from ffmpegTaskAtExit\n", stderr)
+//    fflush(stderr)
+//}
 
 
 // This class is a non-thread safe singleton - be careful!
-class FFmpegTask {
+public class FFmpegTask {
     
+    // Singleton - do not access this class in any other way.
+    public static let Application = FFmpegTask()
+        
     // Flags for running processes
     private static let ValidRequests = ["-ffmpeg", "-ffprobe", "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
                                         "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
@@ -43,10 +45,7 @@ class FFmpegTask {
     // RegEx pattern to use to parse output
     private static let ErrorPattern = #"^\[(?<Type>.*)\]\s(?<Description>.*?)\s*$"#
 
-    // Singleton - do not access this class in any other way.
-    static let Application = FFmpegTask()
-        
-    private let exitGroup = DispatchGroup()
+    private let synchronize = FFmpegSynchronize()
     private let defaultStandardOutputPipe = Pipe()
     private let proxyStandardOutputPipe = Pipe()
     private let defaultStandardErrorPipe = Pipe()
@@ -64,7 +63,7 @@ class FFmpegTask {
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
         
         // Prepare the progress processor - this should be moved only to the one call to ffmpeg
-        progressProcessor = ProgressProcessor(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting, exitGroup: exitGroup)
+        progressProcessor = ProgressProcessor(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting)
         
         // Copy the current std to the default std pipe for holding
         dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
@@ -81,6 +80,10 @@ class FFmpegTask {
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
         dup2(FileHandle.nullDevice.fileDescriptor, FileHandle.standardInput.fileDescriptor)
         
+        // Create the synchronising class to allow flushing of stdout and stderr
+        //synchronize.lock(pipe: proxyStandardOutputPipe)
+        synchronize.register(pipe: proxyStandardErrorPipe)
+        
         // Prepare the exit handler to ensure that the above handles are all flushed and finished
         // In order for the C function closure to work, variables must be static, therefore this
         // is a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits from
@@ -89,17 +92,21 @@ class FFmpegTask {
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
         atexit {
             // Signal to the proxy pipes that we are done with all the output.
-            //fputs("[exit]\n", stdout)
-            //fflush(stdout)
-            //fputs("[exit]\n", stderr)
-            //fflush(stderr)
+            //FFmpegTask.Application.synchronize.signal(pipe: FFmpegTask.Application.proxyStandardOutputPipe)
+            FFmpegTask.Application.synchronize.signal(pipe: FFmpegTask.Application.proxyStandardErrorPipe)
             
-            sleep(10)
-
             // Wait for any activities to complete
-            FFmpegTask.Application.exitGroup.wait()
+            FFmpegTask.Application.synchronize.wait()
         }
     }
+    
+    // Reads stdout and assigns it to the specified processor
+    func processStandardOutput(fileHandle: FileHandle) {
+        let data = fileHandle.availableData
+        defaultStandardOutputPipe.fileHandleForWriting.write(data)
+        defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
+    }
+
     
     // Output an error message in json format "{type:error,description:message}"
     private func printError(_ message: String) {
@@ -123,150 +130,82 @@ class FFmpegTask {
     }
     
     // By default allows the data through. Special cases are dealt with in separate functions, this assumes the results are in json
-    func processFFmpegStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-            
+    private func processFFmpegStandardOutput(fileHandle: FileHandle) {
         let data = fileHandle.availableData
         defaultStandardOutputPipe.fileHandleForWriting.write(data)
         defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
     }
     
     // Allows ffprobe data through. Special cases are dealt with in separate functions, this assumes the results are in json
-    func processFFprobeStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-            
+    private func processFFprobeStandardOutput(fileHandle: FileHandle) {
         let data = fileHandle.availableData
         defaultStandardOutputPipe.fileHandleForWriting.write(data)
         defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
     }
     
-    func processLicenseStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processLicenseStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegLicense(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
     
-    func processVersionStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-               
+    private func processVersionStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegVersion(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
-    func processProtocolsStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processProtocolsStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegProtocols(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
     
-    func processFormatsStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processFormatsStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegFormats(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
     
-    func processBitstreamFiltersStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processBitstreamFiltersStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegBitstreamFilters(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processCodecsStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processCodecsStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegCodecs(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processDecodersStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processDecodersStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegDecoders(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processSampleFormatsStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
+    private func processSampleFormatsStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegSampleFormat(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processColorsStandardOutput(fileHandle: FileHandle) {
-       exitGroup.enter()
-       defer { exitGroup.leave() }
-       
-       writeAsJSON(FFmpegColors(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    private func processColorsStandardOutput(fileHandle: FileHandle) {
+        writeAsJSON(FFmpegColors(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processPixelFormatsStandardOutput(fileHandle: FileHandle) {
-      exitGroup.enter()
-      defer { exitGroup.leave() }
-      
-      writeAsJSON(FFmpegPixelFormats(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    private func processPixelFormatsStandardOutput(fileHandle: FileHandle) {
+        writeAsJSON(FFmpegPixelFormats(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processLayoutsStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-
+    private func processLayoutsStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegLayouts(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
-    func processFiltersStandardOutput(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-
+    private func processFiltersStandardOutput(fileHandle: FileHandle) {
         writeAsJSON(FFmpegFilters(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
     }
 
     // Output an error message in json format "{type:error,description:message}"
-    func processProxyStandardError(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
+    private func processProxyStandardError(fileHandle: FileHandle) {
+        let data = synchronize.checkSignalAndAvailableData(fileHandle: fileHandle)
+        defer { synchronize.unregisterIfSignalled(fileHandle: fileHandle) }
         
-//        let data = fileHandle.availableData
 //         defaultStandardOutputPipe.fileHandleForWriting.write(data)
 //         defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
-        let data = fileHandle.availableData
+        
+        // This method is a bit different in that it prints each processed error separately
         let errors = FFmpegError(from: data).errors
         errors.forEach { error in
             writeAsJSON(error, fileHandle: defaultStandardErrorPipe.fileHandleForWriting)
         }
-
-        let exitCode = data.suffix(7)
-        if exitCode == "[exit]\n".data(using: .ascii) {
-            exitGroup.leave()
-        }
-       
-        
-        // This method is a bit different in that it prints each processed error separately
-//        var data = fileHandle.availableData
-//        while !data.isEmpty {
-//            let errors = FFmpegError(from: data).errors
-//            errors.forEach { error in
-//                writeAsJSON(error, fileHandle: defaultStandardErrorPipe.fileHandleForWriting)
-//            }
-//
-//            if finished {
-//                break
-//            }
-//
-//            data = fileHandle.availableData
-//        }
-
-//        let errors = FFmpegError(from: fileHandle.availableData).errors
-//        errors.forEach { error in
-//            writeAsJSON(error, fileHandle: defaultStandardErrorPipe.fileHandleForWriting)
-//        }
     }
         
-    func processRequest(_ arguments: [String]) -> Int32 {
+    public func processRequest(_ arguments: [String]) -> Int32 {
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't fail
         if arguments.count <= 1 {
             printError("Insufficent arguments")
@@ -384,8 +323,6 @@ class FFmpegTask {
             
             // Check the request to determine what service to call
             if request == "-ffmpeg" {
-                FFmpegTask.Application.exitGroup.enter()
-
                 proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processFFmpegStandardOutput
                 
                 // prepare the arguments for ffmpeg

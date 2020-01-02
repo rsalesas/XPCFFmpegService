@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E1636B4723B705F300CFA5A4 /* ffprobeInterop.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4623B705F300CFA5A4 /* ffprobeInterop.swift */; };
 		E1636B4923B717EE00CFA5A4 /* FFmpegVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4823B717EE00CFA5A4 /* FFmpegVersion.swift */; };
 		E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */; };
 		E1636B5323B9D87400CFA5A4 /* FFmpegLicense.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B5223B9D87400CFA5A4 /* FFmpegLicense.swift */; };
@@ -22,7 +21,8 @@
 		E1636B6723BB60D700CFA5A4 /* FFmpegFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6623BB60D700CFA5A4 /* FFmpegFilters.swift */; };
 		E1636B6923BB63F500CFA5A4 /* FFmpegError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6823BB63F500CFA5A4 /* FFmpegError.swift */; };
 		E1636B6B23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6A23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift */; };
-		E1B1EC49238D0AF8009DE7C4 /* ProgressProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */; };
+		E1636B6E23BDE7CF00CFA5A4 /* FFmpegSynchronize.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6D23BDE7CF00CFA5A4 /* FFmpegSynchronize.swift */; };
+		E1B1EC49238D0AF8009DE7C4 /* FFmpegProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC48238D0AF8009DE7C4 /* FFmpegProgress.swift */; };
 		E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
 		E1B640DC238A8B28006F6502 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B640DB238A8B28006F6502 /* main.swift */; };
 		E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638023866D6D006C7AA5 /* cmdutils.c */; };
@@ -91,7 +91,7 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
-		E1636B4623B705F300CFA5A4 /* ffprobeInterop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ffprobeInterop.swift; sourceTree = "<group>"; };
+		E1636B4623B705F300CFA5A4 /* FFmpegTaskInterop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegTaskInterop.swift; sourceTree = "<group>"; };
 		E1636B4823B717EE00CFA5A4 /* FFmpegVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegVersion.swift; sourceTree = "<group>"; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B5223B9D87400CFA5A4 /* FFmpegLicense.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegLicense.swift; sourceTree = "<group>"; };
@@ -106,6 +106,7 @@
 		E1636B6623BB60D700CFA5A4 /* FFmpegFilters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegFilters.swift; sourceTree = "<group>"; };
 		E1636B6823BB63F500CFA5A4 /* FFmpegError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegError.swift; sourceTree = "<group>"; };
 		E1636B6A23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegBitstreamFilters.swift; sourceTree = "<group>"; };
+		E1636B6D23BDE7CF00CFA5A4 /* FFmpegSynchronize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegSynchronize.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
 		E192A7BB237E5E080026A4D9 /* libx265.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx265.a; path = ../../../../usr/local/lib/libx265.a; sourceTree = "<group>"; };
 		E192A83623826B200026A4D9 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
@@ -122,7 +123,7 @@
 		E19CFF9A237927BE00499A02 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		E19CFF9E23792C8700499A02 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		E19CFFA0237932CE00499A02 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressProcessor.swift; sourceTree = "<group>"; };
+		E1B1EC48238D0AF8009DE7C4 /* FFmpegProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegProgress.swift; sourceTree = "<group>"; };
 		E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegTask.swift; sourceTree = "<group>"; };
 		E1B1EC4C238D0D2F009DE7C4 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		E1B640D2238A8A55006F6502 /* bridging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bridging.h; sourceTree = "<group>"; };
@@ -169,9 +170,31 @@
 		E1636B4523B705BE00CFA5A4 /* Interop */ = {
 			isa = PBXGroup;
 			children = (
-				E1636B4623B705F300CFA5A4 /* ffprobeInterop.swift */,
+				E1636B4623B705F300CFA5A4 /* FFmpegTaskInterop.swift */,
 			);
 			path = Interop;
+			sourceTree = "<group>";
+		};
+		E1636B6C23BDCE5800CFA5A4 /* Processors */ = {
+			isa = PBXGroup;
+			children = (
+				E1636B6A23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift */,
+				E1636B5A23BB27B200CFA5A4 /* FFmpegCodecs.swift */,
+				E1636B6023BB582700CFA5A4 /* FFmpegColors.swift */,
+				E1636B5C23BB3FD100CFA5A4 /* FFmpegDecoders.swift */,
+				E1636B6823BB63F500CFA5A4 /* FFmpegError.swift */,
+				E1636B6623BB60D700CFA5A4 /* FFmpegFilters.swift */,
+				E1636B5623BB20AE00CFA5A4 /* FFmpegFormats.swift */,
+				E1636B6423BB5E1A00CFA5A4 /* FFmpegLayouts.swift */,
+				E1636B5223B9D87400CFA5A4 /* FFmpegLicense.swift */,
+				E1636B6223BB5ADE00CFA5A4 /* FFmpegPixelFormats.swift */,
+				E1B1EC48238D0AF8009DE7C4 /* FFmpegProgress.swift */,
+				E1636B5423BB0E7C00CFA5A4 /* FFmpegProtocols.swift */,
+				E1636B5E23BB56D000CFA5A4 /* FFmpegSampleFormats.swift */,
+				E1636B4823B717EE00CFA5A4 /* FFmpegVersion.swift */,
+				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
+			);
+			path = Processors;
 			sourceTree = "<group>";
 		};
 		E19CFE8E2377D61100499A02 = {
@@ -182,21 +205,8 @@
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
 				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
-				E1636B4823B717EE00CFA5A4 /* FFmpegVersion.swift */,
-				E1636B5423BB0E7C00CFA5A4 /* FFmpegProtocols.swift */,
-				E1636B6423BB5E1A00CFA5A4 /* FFmpegLayouts.swift */,
-				E1636B5623BB20AE00CFA5A4 /* FFmpegFormats.swift */,
-				E1636B5E23BB56D000CFA5A4 /* FFmpegSampleFormats.swift */,
-				E1636B6023BB582700CFA5A4 /* FFmpegColors.swift */,
-				E1636B6823BB63F500CFA5A4 /* FFmpegError.swift */,
-				E1636B6223BB5ADE00CFA5A4 /* FFmpegPixelFormats.swift */,
-				E1636B6623BB60D700CFA5A4 /* FFmpegFilters.swift */,
-				E1636B6A23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift */,
-				E1636B5A23BB27B200CFA5A4 /* FFmpegCodecs.swift */,
-				E1636B5C23BB3FD100CFA5A4 /* FFmpegDecoders.swift */,
-				E1636B5223B9D87400CFA5A4 /* FFmpegLicense.swift */,
-				E1B1EC48238D0AF8009DE7C4 /* ProgressProcessor.swift */,
-				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
+				E1636B6D23BDE7CF00CFA5A4 /* FFmpegSynchronize.swift */,
+				E1636B6C23BDCE5800CFA5A4 /* Processors */,
 				E1B64106238A9410006F6502 /* fftools */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
@@ -323,11 +333,12 @@
 				E1B640E2238A8EF5006F6502 /* ffmpeg_cuvid.c in Sources */,
 				E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */,
 				E1B640E8238A8F07006F6502 /* ffprobe.c in Sources */,
+				E1636B6E23BDE7CF00CFA5A4 /* FFmpegSynchronize.swift in Sources */,
 				E1636B5523BB0E7C00CFA5A4 /* FFmpegProtocols.swift in Sources */,
 				E1B64104238A91FD006F6502 /* descriptors.c in Sources */,
 				E1636B6B23BDC64700CFA5A4 /* FFmpegBitstreamFilters.swift in Sources */,
 				E1636B6123BB582700CFA5A4 /* FFmpegColors.swift in Sources */,
-				E1B1EC49238D0AF8009DE7C4 /* ProgressProcessor.swift in Sources */,
+				E1B1EC49238D0AF8009DE7C4 /* FFmpegProgress.swift in Sources */,
 				E1636B5723BB20AE00CFA5A4 /* FFmpegFormats.swift in Sources */,
 				E1B640E4238A8EFC006F6502 /* ffmpeg_hw.c in Sources */,
 				E1636B5F23BB56D000CFA5A4 /* FFmpegSampleFormats.swift in Sources */,
@@ -343,7 +354,6 @@
 				E1636B5323B9D87400CFA5A4 /* FFmpegLicense.swift in Sources */,
 				E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */,
 				E1636B6723BB60D700CFA5A4 /* FFmpegFilters.swift in Sources */,
-				E1636B4723B705F300CFA5A4 /* ffprobeInterop.swift in Sources */,
 				E1B640DC238A8B28006F6502 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -63,10 +63,9 @@ class ProgressProcessor {
     
     // RegEx pattern to use to parse properties
 
-    let NewlineMarker = Data(bytes: [0x0A], count: 1)
+    private let NewlineMarker = Data(bytes: [0x0A], count: 1)
     
     private let progressPipe = Pipe()
-    private let exitGroup: DispatchGroup
     private let defaultStdErr: FileHandle
     
     var fileDescriptor: Int32 {
@@ -75,17 +74,13 @@ class ProgressProcessor {
         }
     }
 
-    init(defaultStdErr: FileHandle, exitGroup: DispatchGroup) {
-        self.exitGroup = exitGroup
+    init(defaultStdErr: FileHandle) {
         self.defaultStdErr = defaultStdErr
         progressPipe.fileHandleForReading.readabilityHandler = processProgress
     }
     
     // This function relies on the fact that ffmpeg.c::print_report flushes after writing its buffers
     func processProgress(fileHandle: FileHandle) {
-        exitGroup.enter()
-        defer { exitGroup.leave() }
-        
         guard let jsonData = try? JSONEncoder().encode(FFmpegProgress(from: fileHandle.availableData)) else {
             fatalError("Unable to process progress information.")
         }
