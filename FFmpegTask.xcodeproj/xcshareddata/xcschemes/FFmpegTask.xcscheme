@@ -56,12 +56,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format"
-            isEnabled = "YES">
+            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format -show_streams"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-ffprobe -protocols"
+            argument = "-version"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-protocols"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-pix_fmts"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-decoders"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-license"

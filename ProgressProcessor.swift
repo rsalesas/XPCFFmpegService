@@ -7,80 +7,61 @@
 //
 
 import Foundation
-import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
-class ProgressProperties: Codable {
-    var frame: Int?
-    var fps: Double?
-    var input: Int?
-    var stream: Int?
-    var quality: Double?
-    var bitrate: Double?
-    var totalSize: Int?
-    var outTime: TimeInterval?
-    var duplicateFrames: Int?
-    var droppedFrames: Int?
-    var speed: Int?
+class FFmpegProgress: Encodable {
+    
+    private static let ProgressPattern = #"(?:frame=(?<Frame>\d*)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]*)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]*)\n)?(?:(?:.*\n)*bitrate=(?<Bitrate>[\d\.]*)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>\d*)\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>\d*)\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d*)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d*)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>\d*)x\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))"#
+
+    var frame: Int
+    var fps: Double
+    var input: Int
+    var stream: Int
+    var quality: Double
+    var bitrate: Double
+    var totalSize: Int
+    var outTime: TimeInterval
+    var duplicateFrames: Int
+    var droppedFrames: Int
+    var speed: Int
     var finished: Bool = false
     
-    internal init(message: String, values: NSTextCheckingResult) {
-        if let range = Range(values.range(withName: "Frame"), in: message) {
-            frame = Int(message[range])
+    init(from: Data) {
+        guard let data = String(data: from, encoding: .utf8) else {
+            fatalError("Invalid ffmpeg progress output")
         }
         
-        if let range = Range(values.range(withName: "Fps"), in: message) {
-            fps = Double(message[range])
-        }
+        let matchRegEx = MatchRegularExpression(in: data, pattern: FFmpegProgress.ProgressPattern)
+        precondition(matchRegEx.matches.count == 1, "Invalid ffmpeg progress output; unexpected format")
 
-        if let range = Range(values.range(withName: "Input"), in: message) {
-            input = Int(message[range])
+        guard let frame = Int(matchRegEx.matches[0, "Frame"]), let fps = Double(matchRegEx.matches[0, "Fps"]),
+            let input = Int(matchRegEx.matches[0, "Input"]), let stream = Int(matchRegEx.matches[0, "Stream"]),
+            let quality = Double(matchRegEx.matches[0, "Quality"]), let bitrate = Double(matchRegEx.matches[0, "Bitrate"]),
+            let totalSize = Int(matchRegEx.matches[0, "TotalSize"]), let ms = TimeInterval(matchRegEx.matches[0, "OutTime"]),
+            let duplicateFrames = Int(matchRegEx.matches[0, "DuplicateFrames"]), let droppedFrames = Int(matchRegEx.matches[0, "droppedFrames"]),
+            let speed = Int(matchRegEx.matches[0, "Speed"]) else {
+            fatalError("Invalid ffmpeg progress output; unexpected format")
         }
-        
-        if let range = Range(values.range(withName: "Stream"), in: message) {
-            stream = Int(message[range])
-        }
-        
-        if let range = Range(values.range(withName: "Quality"), in: message) {
-            quality = Double(message[range])
-        }
-        
-        if let range = Range(values.range(withName: "Bitrate"), in: message) {
-            bitrate = Double(message[range])
-        }
-
-        if let range = Range(values.range(withName: "TotalSize"), in: message) {
-            totalSize = Int(message[range])
-        }
-
-        if let range = Range(values.range(withName: "OutTime"), in: message) {
-            if let ms = TimeInterval(message[range]) {
-                outTime = ms / 1000000.0
-            }
-        }
-
-        if let range = Range(values.range(withName: "DuplicateFrames"), in: message) {
-            duplicateFrames = Int(message[range])
-        }
-
-        if let range = Range(values.range(withName: "DroppedFrames"), in: message) {
-            droppedFrames = Int(message[range])
-        }
-
-        if let range = Range(values.range(withName: "Speed"), in: message) {
-            speed = Int(message[range])
-        }
-        
-        if let range = Range(values.range(withName: "Progress"), in: message) {
-            finished = message[range] == "end"
-        }
+                
+        self.frame = frame
+        self.fps = fps
+        self.input = input
+        self.stream = stream
+        self.quality = quality
+        self.bitrate = bitrate
+        self.totalSize = totalSize
+        self.outTime = ms / 1000000.0
+        self.duplicateFrames = duplicateFrames
+        self.droppedFrames = droppedFrames
+        self.speed = speed
+        self.finished = matchRegEx.matches[0, "Progress"] == "end"
     }
+
 }
 
 class ProgressProcessor {
     
     // RegEx pattern to use to parse properties
-    private static let Pattern = #"(?:frame=(?<Frame>\d*)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]*)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]*)\n)?(?:(?:.*\n)*bitrate=(?<Bitrate>[\d\.]*)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>\d*)\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>\d*)\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d*)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d*)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>\d*)x\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))"#
 
     let NewlineMarker = Data(bytes: [0x0A], count: 1)
     
@@ -104,19 +85,9 @@ class ProgressProcessor {
     func processProgress(fileHandle: FileHandle) {
         exitGroup.enter()
         defer { exitGroup.leave() }
-
-        let data = fileHandle.availableData
-        guard let message = String(data: data, encoding: .utf8),
-            let regEx = try? NSRegularExpression(pattern: ProgressProcessor.Pattern),
-            let values = regEx.matches(in: message, options: [], range: NSMakeRange(0, message.count)).first else {
-            os_log("Unable to process progress information.")
-            return
-        }
-    
-        let progressProperties = ProgressProperties(message: message, values: values)
-        guard let jsonData = try? JSONEncoder().encode(progressProperties) else {
-            os_log("Unable to process progress information.")
-            return
+        
+        guard let jsonData = try? JSONEncoder().encode(FFmpegProgress(from: fileHandle.availableData)) else {
+            fatalError("Unable to process progress information.")
         }
 
         defaultStdErr.write(jsonData)

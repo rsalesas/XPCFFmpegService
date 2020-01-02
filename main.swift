@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
-// Call FFmpegTask to carry out the actions
+
 exit(FFmpegTask.Application.processRequest(CommandLine.arguments))

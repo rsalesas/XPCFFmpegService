@@ -9,24 +9,27 @@
 
 
 import Foundation
-import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
 struct FFmpegFormats: Encodable {
-    private static let FormatPattern = #"^\s{1,2}(?<Support>[DE\s]{2})\s+(?<Format>\S+)\s+(?<Description>.*)$"#  // -formats, -demuxers, -muxers, -devices
+    private static let FormatPattern = #"^\s{1,2}(?<Support>[DE\s]{2})\s+(?<Format>\S+)\s+(?<Description>.+)$"#  // -formats, -demuxers, -muxers, -devices
+    
+    enum Support : String, Encodable {
+        case muxing = "Muxing"
+        case demuxing = "Demuxing"
+    }
     
     struct Format: Encodable {
         let format: String
         let description: String
-        let muxing: Bool
-        let demuxing: Bool
+        let support: [Support]
     }
     
     public let formats: [Format]
     
     init(from: Data) {
         guard let data = String(data: from, encoding: .utf8) else {
-            fatalError("Invalid ffmpeg version output")
+            fatalError("Invalid ffmpeg output")
         }
         
         // Must have at least 2 match groups
@@ -40,7 +43,9 @@ struct FFmpegFormats: Encodable {
             let description = matchRegEx.matches[index, "Description"]
             let support = Array(matchRegEx.matches[index, "Support"])
             
-            formats.append(Format(format: format, description: description, muxing: support[1] == "E", demuxing: support[0] == "D"))
+            let supportFlags: [Support] = (support[0] == "D" ? [.demuxing] : []) + ((support[1] == "E") ? [.muxing] : [])
+            
+            formats.append(Format(format: format, description: description, support: supportFlags))
         }
         
         self.formats = formats
