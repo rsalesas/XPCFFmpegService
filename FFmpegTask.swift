@@ -51,6 +51,8 @@ public class FFmpegTask {
     private let defaultStandardErrorPipe = Pipe()
     private let proxyStandardErrorPipe = Pipe()
     
+    private var proxyStandardOutputHandler: ((Data) -> Void)?
+    
     private let progressProcessor: ProgressProcessor
     
     private var finished = false
@@ -71,29 +73,38 @@ public class FFmpegTask {
 
         // Reset std to the proxy std pipe to allow intercepting and redirect to processor and enable line buffering
         dup2(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardOutput.fileDescriptor)
-        //setlinebuf(fdopen(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, "w"))
+        proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processProxyStandardOutput
+        setlinebuf(fdopen(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, "w"))
 
         dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
         proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProxyStandardError
-        //setlinebuf(fdopen(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, "w"))
+        setlinebuf(fdopen(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, "w"))
 
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
         dup2(FileHandle.nullDevice.fileDescriptor, FileHandle.standardInput.fileDescriptor)
         
         // Create the synchronising class to allow flushing of stdout and stderr
-        //synchronize.lock(pipe: proxyStandardOutputPipe)
+        synchronize.register(pipe: proxyStandardOutputPipe)
         synchronize.register(pipe: proxyStandardErrorPipe)
-        
+                
         // Prepare the exit handler to ensure that the above handles are all flushed and finished
         // In order for the C function closure to work, variables must be static, therefore this
         // is a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits from
-        // a billion places, seemingly randomly.
+        // a billion places.
         //
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
         atexit {
+//            //try? FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.close()
+//            close(FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor)
+//            close(STDOUT_FILENO)
+//
+//            var data = FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForReading.readDataToEndOfFile()
+//            if data.isEmpty {
+//                fatalError()
+//            }
+
             // Signal to the proxy pipes that we are done with all the output.
-            //FFmpegTask.Application.synchronize.signal(pipe: FFmpegTask.Application.proxyStandardOutputPipe)
-            FFmpegTask.Application.synchronize.signal(pipe: FFmpegTask.Application.proxyStandardErrorPipe)
+            FFmpegTask.Application.synchronize.signal()
             
             // Wait for any activities to complete
             FFmpegTask.Application.synchronize.wait()
@@ -120,7 +131,11 @@ public class FFmpegTask {
     
     // Note: As Encodable is a protocol, we need to use templates
     private func writeAsJSON<C: Encodable>(_ encodable: C, fileHandle: FileHandle) {
-        guard let jsonData = try? JSONEncoder().encode(encodable) else {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.withoutEscapingSlashes] //, .sortedKeys, .prettyPrinted]
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        
+        guard let jsonData = try? encoder.encode(encodable) else {
             fatalError("Unable to output json object.")
         }
 
@@ -129,82 +144,86 @@ public class FFmpegTask {
         fileHandle.synchronizeFile()
     }
     
-    // By default allows the data through. Special cases are dealt with in separate functions, this assumes the results are in json
-    private func processFFmpegStandardOutput(fileHandle: FileHandle) {
-        let data = fileHandle.availableData
-        defaultStandardOutputPipe.fileHandleForWriting.write(data)
-        defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
-    }
-    
-    // Allows ffprobe data through. Special cases are dealt with in separate functions, this assumes the results are in json
-    private func processFFprobeStandardOutput(fileHandle: FileHandle) {
-        let data = fileHandle.availableData
-        defaultStandardOutputPipe.fileHandleForWriting.write(data)
-        defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
-    }
-    
-    private func processLicenseStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegLicense(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-    
-    private func processVersionStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegVersion(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-    private func processProtocolsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegProtocols(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-    
-    private func processFormatsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegFormats(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-    
-    private func processBitstreamFiltersStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegBitstreamFilters(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processCodecsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegCodecs(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processDecodersStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegDecoders(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processSampleFormatsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegSampleFormat(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processColorsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegColors(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processPixelFormatsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegPixelFormats(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processLayoutsStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegLayouts(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
-    private func processFiltersStandardOutput(fileHandle: FileHandle) {
-        writeAsJSON(FFmpegFilters(from: fileHandle.availableData), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
-    }
-
     // Output an error message in json format "{type:error,description:message}"
+    // This method is a bit different in that it prints each processed error separately
     private func processProxyStandardError(fileHandle: FileHandle) {
-        let data = synchronize.checkSignalAndAvailableData(fileHandle: fileHandle)
-        defer { synchronize.unregisterIfSignalled(fileHandle: fileHandle) }
-        
-//         defaultStandardOutputPipe.fileHandleForWriting.write(data)
-//         defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
-        
-        // This method is a bit different in that it prints each processed error separately
+        defer { synchronize.exit(fileHandle: fileHandle) }
+        guard let data = synchronize.enter(fileHandle: fileHandle) else {
+            return
+        }
+
         let errors = FFmpegError(from: data).errors
         errors.forEach { error in
             writeAsJSON(error, fileHandle: defaultStandardErrorPipe.fileHandleForWriting)
         }
     }
-        
+    
+    private func processProxyStandardOutput(fileHandle: FileHandle) {
+        defer { synchronize.exit(fileHandle: fileHandle) }
+        if let data = synchronize.enter(fileHandle: fileHandle), let handler = proxyStandardOutputHandler {
+            handler(data)
+        }
+    }
+
+    // By default allows the data through. Special cases are dealt with in separate functions, this assumes the results are in json
+    private func processFFmpegStandardOutput(data: Data) {
+        defaultStandardOutputPipe.fileHandleForWriting.write(data)
+        defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
+    }
+    
+    // Allows ffprobe data through. Special cases are dealt with in separate functions, this assumes the results are in json
+    private func processFFprobeStandardOutput(data: Data) {
+        defaultStandardOutputPipe.fileHandleForWriting.write(data)
+        defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
+    }
+    
+    private func processLicenseStandardOutput(data: Data) {
+        writeAsJSON(FFmpegLicense(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+    
+    private func processVersionStandardOutput(data: Data) {
+        writeAsJSON(FFmpegVersion(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+    private func processProtocolsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegProtocols(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+    
+    private func processFormatsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegFormats(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+    
+    private func processBitstreamFiltersStandardOutput(data: Data) {
+        writeAsJSON(FFmpegBitstreamFilters(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processCodecsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegCodecs(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processDecodersStandardOutput(data: Data) {
+        writeAsJSON(FFmpegDecoders(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processSampleFormatsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegSampleFormat(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processColorsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegColors(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processPixelFormatsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegPixelFormats(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processLayoutsStandardOutput(data: Data) {
+        writeAsJSON(FFmpegLayouts(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
+    private func processFiltersStandardOutput(data: Data) {
+        writeAsJSON(FFmpegFilters(from: data), fileHandle: defaultStandardOutputPipe.fileHandleForWriting)
+    }
+
     public func processRequest(_ arguments: [String]) -> Int32 {
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't fail
         if arguments.count <= 1 {
@@ -221,84 +240,84 @@ public class FFmpegTask {
         
         // Check the request to determine what service to call
         if request == "-license" {
-            proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processLicenseStandardOutput
+            proxyStandardOutputHandler = processLicenseStandardOutput
 
             let args = [arguments[0], "-L"] + FFmpegTask.FFmpegFlags
             var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
             return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
             
         } else if request == "-version" {
-            proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processVersionStandardOutput
+            proxyStandardOutputHandler = processVersionStandardOutput
             
             let args = [arguments[0], "-version"] + FFmpegTask.FFmpegFlags
             var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
             return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-protocols" {
-            proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processProtocolsStandardOutput
+            proxyStandardOutputHandler = processProtocolsStandardOutput
             
             let args = [arguments[0], "-protocols"] + FFmpegTask.FFmpegFlags
             var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
             return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
     
         } else if ["-formats", "-muxers", "-demuxers", "-devices"].contains(request) {
-            proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processFormatsStandardOutput
+            proxyStandardOutputHandler = processFormatsStandardOutput
             
             let args = [arguments[0], request] + FFmpegTask.FFmpegFlags
             var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
             return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
             
         } else if request == "-bsfs" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processBitstreamFiltersStandardOutput
+             proxyStandardOutputHandler = processBitstreamFiltersStandardOutput
              
              let args = [arguments[0], "-bsfs"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-codecs" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processCodecsStandardOutput
+             proxyStandardOutputHandler = processCodecsStandardOutput
              
              let args = [arguments[0], "-codecs"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-decoders" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processDecodersStandardOutput
+             proxyStandardOutputHandler = processDecodersStandardOutput
              
              let args = [arguments[0], "-decoders"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-sample_fmts" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processSampleFormatsStandardOutput
+             proxyStandardOutputHandler = processSampleFormatsStandardOutput
              
              let args = [arguments[0], "-sample_fmts"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-colors" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processColorsStandardOutput
+             proxyStandardOutputHandler = processColorsStandardOutput
              
              let args = [arguments[0], "-colors"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-pix_fmts" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processPixelFormatsStandardOutput
+             proxyStandardOutputHandler = processPixelFormatsStandardOutput
              
              let args = [arguments[0], "-pix_fmts"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-layouts" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processLayoutsStandardOutput
+             proxyStandardOutputHandler = processLayoutsStandardOutput
              
              let args = [arguments[0], "-layouts"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
              return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
 
         } else if request == "-filters" {
-             proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processFiltersStandardOutput
+             proxyStandardOutputHandler = processFiltersStandardOutput
              
              let args = [arguments[0], "-filters"] + FFmpegTask.FFmpegFlags
              var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
@@ -323,7 +342,7 @@ public class FFmpegTask {
             
             // Check the request to determine what service to call
             if request == "-ffmpeg" {
-                proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processFFmpegStandardOutput
+                proxyStandardOutputHandler = processFFmpegStandardOutput
                 
                 // prepare the arguments for ffmpeg
                 let args = newArguments + FFmpegTask.FFmpegFlags + ["-progress", "pipe:\(progressProcessor.fileDescriptor)"]
@@ -333,7 +352,7 @@ public class FFmpegTask {
                 return ffmpeg(Int32(cargs.count), &cargs)
                 
             } else if request == "-ffprobe" {
-                proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = processFFprobeStandardOutput
+                proxyStandardOutputHandler = processFFprobeStandardOutput
 
                 // Prepare the arguments for ffprobe
                 let args = newArguments + FFmpegTask.FFprobeFlags

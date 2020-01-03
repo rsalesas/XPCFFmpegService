@@ -10,6 +10,9 @@
 
 import Foundation
 
+protocol FFmpegDataHandler {
+    init(from: Data)
+}
 
 struct FFmpegVersion: Encodable {
     private static let VersionPattern = #"^(?:FFmpegTask version (?<Version>\S+)\s(?<FFmpegCopyright>.*)\nbuilt with (?<Compiler>.*)\nconfiguration: (?<Configuration>.*)\n)|(?:(?<Library>lib\S+)\s*(?<Major>\d+)\.\s*(?<Minor>\d+)\.\s*(?<Build>\d+))"#  // -version

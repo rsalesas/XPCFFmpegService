@@ -23,7 +23,8 @@ internal class FFmpegSynchronize {
 
     private let group = DispatchGroup()
     private var pipes: [Pipe:Bool] = [:]
-    
+    private var signalled: Bool = false
+
     func register(pipe: Pipe) {
         objc_sync_enter(group)
         defer { objc_sync_exit(group) }
@@ -59,7 +60,7 @@ internal class FFmpegSynchronize {
         return nil
     }
     
-    func unregisterIfSignalled(pipe: Pipe) {
+    private func unregisterIfSignalled(pipe: Pipe) {
         objc_sync_enter(group)
         defer { objc_sync_exit(group) }
             
@@ -69,7 +70,23 @@ internal class FFmpegSynchronize {
         }
     }
 
-    func unregisterIfSignalled(fileHandle: FileHandle) {
+    func enter(fileHandle: FileHandle) -> Data? {
+        objc_sync_enter(group)
+        defer { objc_sync_exit(group) }
+
+        var data = fileHandle.availableData
+        if signalled, FFmpegSynchronize.SynchronizeSignalBytes == data.suffix(FFmpegSynchronize.SynchronizeSignalBytes.count) {
+            if let pipe = pipeForFileHandle(fileHandle: fileHandle) {
+                pipes[pipe] = true
+            }
+
+            data = data.dropLast(FFmpegSynchronize.SynchronizeSignalBytes.count)
+        }
+        
+        return data.isEmpty ? nil : data
+    }
+    
+    func exit(fileHandle: FileHandle) {
         objc_sync_enter(group)
         defer { objc_sync_exit(group) }
             
@@ -78,30 +95,19 @@ internal class FFmpegSynchronize {
         }
     }
     
-    func signal(pipe: Pipe) {
+    func signal() {
         objc_sync_enter(group)
         defer { objc_sync_exit(group) }
             
-        pipe.fileHandleForWriting.write(FFmpegSynchronize.SynchronizeSignalBytes)
+        signalled = true
+        pipes.forEach { element in
+            element.key.fileHandleForWriting.write(FFmpegSynchronize.SynchronizeSignalBytes)
+        }
     }
     
     func wait() {
         group.wait()
     }
     
-    func checkSignalAndAvailableData(fileHandle: FileHandle) -> Data {
-        objc_sync_enter(group)
-        defer { objc_sync_exit(group) }
 
-        let data = fileHandle.availableData
-        if FFmpegSynchronize.SynchronizeSignalBytes == data.suffix(FFmpegSynchronize.SynchronizeSignalBytes.count) {
-            if let pipe = pipeForFileHandle(fileHandle: fileHandle) {
-                pipes[pipe] = true
-            }
-
-            return data.dropLast(FFmpegSynchronize.SynchronizeSignalBytes.count)
-        }
-        
-        return data
-    }
 }
