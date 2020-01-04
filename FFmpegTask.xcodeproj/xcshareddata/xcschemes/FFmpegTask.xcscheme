@@ -52,8 +52,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y Output.mkv"
+            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y $(SRCROOT)/../Test/Output.mkv"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y Output.mkv"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format -show_streams"
@@ -64,15 +68,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-protocols"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-pix_fmts"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-decoders"
+            argument = "-codecs"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
