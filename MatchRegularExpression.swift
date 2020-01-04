@@ -9,12 +9,13 @@
 
 
 import Foundation
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
 class MatchRegularExpression {
     
     struct Matches {
-        internal let data: String
+        internal let output: String
         internal let matches: [NSTextCheckingResult]
 
         public var count: Int {
@@ -30,35 +31,35 @@ class MatchRegularExpression {
         
         public func contains(index: Int, group: String) -> Bool {
             precondition(index < matches.count, "Index out of range")
-            let range = Range(matches[index].range(withName: group), in: data)
+            let range = Range(matches[index].range(withName: group), in: output)
             return range != nil
         }
         
         public subscript(index: Int, group: String) -> String {
             get {
                 precondition(index < matches.count, "Index out of range")
-                guard let range = Range(matches[index].range(withName: group), in: data) else {
+                guard let range = Range(matches[index].range(withName: group), in: output) else {
                     fatalError("Group name does not exist")
                 }
                 
-                return String(data[range])
+                return String(output[range])
             }
         }
             
         public subscript(index: Int, at: Int) -> String {
             get {
                 precondition(index < matches.count, "Index out of range")
-                guard let range = Range(matches[index].range(at: at), in: data) else {
+                guard let range = Range(matches[index].range(at: at), in: output) else {
                     fatalError("Index out of range")
                 }
                 
-                return String(data[range])
+                return String(output[range])
             }
         }
         
-        internal init(data: String, regEx: NSRegularExpression, matchingOptions: NSRegularExpression.MatchingOptions) {
-            self.data = data
-            self.matches = regEx.matches(in: data, options: matchingOptions, range: NSMakeRange(0, data.count))
+        internal init(from: String, regEx: NSRegularExpression, matchingOptions: NSRegularExpression.MatchingOptions) {
+            self.output = from
+            self.matches = regEx.matches(in: output, options: matchingOptions, range: NSMakeRange(0, output.count))
         }
     }
     
@@ -78,13 +79,13 @@ class MatchRegularExpression {
         }
     }
 
-    init(in data: String, pattern: String, options: NSRegularExpression.Options = [], matchingOptions: NSRegularExpression.MatchingOptions = []) {
-        guard let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
-            fatalError("Invalid NSRegularExpression arguments")
+    init?(in data: Data, pattern: String, options: NSRegularExpression.Options = [], matchingOptions: NSRegularExpression.MatchingOptions = []) {
+        guard let output = String(data: data, encoding: .utf8), let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
+            return nil
         }
         
         self.regEx = regEx
-        self.matches = Matches(data: data, regEx: self.regEx, matchingOptions: matchingOptions)
+        self.matches = Matches(from: output, regEx: self.regEx, matchingOptions: matchingOptions)
     }
 }
 
