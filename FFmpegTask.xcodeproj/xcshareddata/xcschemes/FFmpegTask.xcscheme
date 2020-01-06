@@ -53,15 +53,15 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y $(SRCROOT)/../Test/Output.mkv"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y Output.mkv"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format -show_streams"
-            isEnabled = "NO">
+            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format -show_streams -show_frames"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-version"

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1134D6C23C09F4D00614692 /* ProgressHandler.swift */; };
 		E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */; };
 		E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */; };
 		E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
@@ -59,6 +60,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
 		E14F637C23866D6D006C7AA5 /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_videotoolbox.c; sourceTree = "<group>"; };
 		E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_cuvid.c; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
@@ -156,6 +158,7 @@
 				E1B64102238A908C006F6502 /* descriptors.c */,
 				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
 				E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */,
+				E1134D6C23C09F4D00614692 /* ProgressHandler.swift */,
 				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
 				E1B64106238A9410006F6502 /* fftools */,
 				E19CFEF22378704900499A02 /* Frameworks */,
@@ -289,6 +292,7 @@
 				E1B640E6238A8F01006F6502 /* ffmpeg_videotoolbox.c in Sources */,
 				E1B640E3238A8EF8006F6502 /* ffmpeg_filter.c in Sources */,
 				E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */,
+				E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */,
 				E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */,
 				E1B640DC238A8B28006F6502 /* main.swift in Sources */,
 			);

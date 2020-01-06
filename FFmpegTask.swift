@@ -57,7 +57,7 @@ public class FFmpegTask {
     
     private var standardOutputBuffer = Data(capacity: 4096)
     private var outputHandlerType: FFmpegOutputHandler.Type?
-    private let progressProcessor: ProgressProcessor
+    private let progressHandler: ProgressHandler
     
     
     private func registerOutputHandler(handler: FFmpegOutputHandler.Type) {
@@ -75,7 +75,7 @@ public class FFmpegTask {
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
         
         // Prepare the progress processor - this should be moved only to the one call to ffmpeg
-        progressProcessor = ProgressProcessor(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting)
+        progressHandler = ProgressHandler(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting)
         
         // Copy the current std to the default std pipe for holding
         dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
@@ -108,6 +108,8 @@ public class FFmpegTask {
                 
                 FFmpegTask.Application.processProxyStandardOutput(fileHandle: FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForReading)
                 FFmpegTask.Application.processProxyStandardError(fileHandle: FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForReading)
+
+                FFmpegTask.Application.progressHandler.processLastProgress()
             }
         }
     }
@@ -281,7 +283,7 @@ public class FFmpegTask {
             // Check the request to determine what service to call
             if request == "-ffmpeg" {
                 proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = passthroughProxyStandardOutput
-                return invokeFFmpeg(arguments: ["-progress", "pipe:\(progressProcessor.fileDescriptor)"] + newArguments)
+                return invokeFFmpeg(arguments: ["-progress", "pipe:\(progressHandler.fileDescriptor)"] + newArguments)
                 
             } else if request == "-ffprobe" {
                 proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = passthroughProxyStandardOutput

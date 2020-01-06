@@ -78,6 +78,16 @@ class MatchRegularExpression {
             return regEx.options
         }
     }
+    
+    public var fullMatch: NSRange? {
+        get {
+            if matches.count == 0 {
+                return nil
+            }
+            
+            return NSIntersectionRange(matches.matches[0].range, matches.matches[matches.matches.count - 1].range)
+        }
+    }
 
     init?(in data: Data, pattern: String, options: NSRegularExpression.Options = [], matchingOptions: NSRegularExpression.MatchingOptions = []) {
         guard let output = String(data: data, encoding: .utf8), let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
