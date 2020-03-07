@@ -1,6 +1,8 @@
 
 # Ignore ffmpeg lib and include files
-# ???
+FFmpeg/
+include/
+lib/
 
 # Created by https://www.gitignore.io/api/xcode,macos
 # Edit at https://www.gitignore.io/?templates=xcode,macos

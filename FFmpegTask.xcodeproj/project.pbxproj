@@ -79,11 +79,10 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
-		E1636B4623B705F300CFA5A4 /* FFmpegTaskInterop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegTaskInterop.swift; sourceTree = "<group>"; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputHandlers.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
-		E192A7BB237E5E080026A4D9 /* libx265.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx265.a; path = ../../../../usr/local/lib/libx265.a; sourceTree = "<group>"; };
+		E192A7BB237E5E080026A4D9 /* libx265.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx265.a; path = ../../../../usr/local/lib/libx265.a; sourceTree = SOURCE_ROOT; };
 		E192A83623826B200026A4D9 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		E19CFEF32378704A00499A02 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		E19CFEF52378705200499A02 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -144,7 +143,6 @@
 		E1636B4523B705BE00CFA5A4 /* Interop */ = {
 			isa = PBXGroup;
 			children = (
-				E1636B4623B705F300CFA5A4 /* FFmpegTaskInterop.swift */,
 			);
 			path = Interop;
 			sourceTree = "<group>";
@@ -230,6 +228,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = E1B640DD238A8B28006F6502 /* Build configuration list for PBXNativeTarget "FFmpegTask" */;
 			buildPhases = (
+				E1FFC5962413A70800D30BE9 /* Make FFmpeg */,
 				E1B640D5238A8B28006F6502 /* Sources */,
 				E1B640D6238A8B28006F6502 /* Frameworks */,
 				E1B640D7238A8B28006F6502 /* CopyFiles */,
@@ -275,6 +274,27 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E1FFC5962413A70800D30BE9 /* Make FFmpeg */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Make FFmpeg";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Set this to see all commands executing\n# set -e\n\n# Check that HomeBrew is installed\nif ! which brew > /dev/null; then\n  echo \"ERROR: brew is missing.\"\n  exit 1\nfi\n\n# Check that nasm is installed\nif ! brew ls --versions nasm > /dev/null; then\n    echo \"ERROR: nasm is missing.\"\n    exit 1\nfi\n\n# Check that pkg-config is installed\nif ! brew ls --versions pkg-config > /dev/null; then\n    echo \"ERROR: pkg-config is missing.\"\n    exit 1\nfi\n\n# Check that x264 is installed\nif ! brew ls --versions x264 > /dev/null; then\n    echo \"ERROR: x264 is missing.\"\n    exit 1\nfi\n\n# Check that x265 is installed\nif ! brew ls --versions x265 > /dev/null; then\n    echo \"ERROR: x265 is missing.\"\n    exit 1\nfi\n\n# Copy the x264 and x265 .a files to the main folder\nditto /usr/local/lib/libx264.a ${PROJECT_DIR}/lib/libx264.a\nditto /usr/local/lib/libx265.a ${PROJECT_DIR}/lib/libx265.a\n\n# Clone FFmpeg if it's not already there, and otherwise update it\nif [ ! -d ${PROJECT_DIR}/FFmpeg ]; then\n    mkdir -p ${PROJECT_DIR}/FFmpeg;\n    git clone -b release/4.2 https://github.com/FFmpeg/FFmpeg.git \"${PROJECT_DIR}/FFmpeg\";\nelse\n    # git fetch ${PROJECT_DIR}/FFmpeg\n    exit 0\nfi\n\n# Create the build directory if it doesn't already exist\nmkdir -p ${CONFIGURATION_BUILD_DIR}\n\n# Set the ffmpeg configuration\ncd ${PROJECT_DIR}/FFmpeg\n./configure --prefix=${CONFIGURATION_BUILD_DIR} --arch=x86_64 cc=\"clang\" \\\n    --extra-cflags=\"-fno-stack-check -mmacosx-version-min=10.13\" --pkg-config=\"pkg-config --static\" \\\n    --libdir=${PROJECT_DIR}/lib --incdir=${PROJECT_DIR}/include --shlibdir=${PROJECT_DIR}/Frameworks \\\n    --fatal-warnings --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3 \\\n    --disable-avresample --disable-sdl2 --disable-bzlib --disable-xlib --disable-zlib \\\n    --enable-libx264 --enable-libx265 \\\n    --disable-programs --disable-doc \n\n# Copy config.h to the main folder\nditto ${PROJECT_DIR}/FFmpeg/config.h ${PROJECT_DIR}/include/config.h\n\n# Make the ffmpeg project\nmake\nmake install\ncd -\n\n# Copy missing .h files to main folder\nditto ${PROJECT_DIR}/FFmpeg/libavresample/avresample.h ${PROJECT_DIR}/include/libavresample/avresample.h\nditto ${PROJECT_DIR}/FFmpeg/libavresample/version.h ${PROJECT_DIR}/include/libavresample/version.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/network.h ${PROJECT_DIR}/include/libavformat/network.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/url.h ${PROJECT_DIR}/include/libavformat/url.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/os_support.h ${PROJECT_DIR}/include/libavformat/os_support.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/libm.h ${PROJECT_DIR}/include/libavutil/libm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/internal.h ${PROJECT_DIR}/include/libavutil/internal.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/timer.h ${PROJECT_DIR}/include/libavutil/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/reverse.h ${PROJECT_DIR}/include/libavutil/reverse.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/thread.h ${PROJECT_DIR}/include/libavutil/thread.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/asm.h ${PROJECT_DIR}/include/libavutil/x86/asm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/timer.h ${PROJECT_DIR}/include/libavutil/x86/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/emms.h ${PROJECT_DIR}/include/libavutil/x86/emms.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/mathops.h ${PROJECT_DIR}/include/libavcodec/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/x86/mathops.h ${PROJECT_DIR}/include/libavcodec/x86/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/compat/va_copy.h ${PROJECT_DIR}/include/compat/va_copy.h\n\nexit 0\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		E1B640D5238A8B28006F6502 /* Sources */ = {
@@ -419,7 +439,7 @@
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				LIBRARY_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../FFmpeg/lib\"",
+					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -427,7 +447,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../FFmpeg/include\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
 			};
 			name = Debug;
 		};
@@ -438,7 +458,7 @@
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				LIBRARY_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../FFmpeg/lib\"",
+					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -446,7 +466,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../FFmpeg/include\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
 			};
 			name = Release;
 		};
