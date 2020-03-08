@@ -60,8 +60,20 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.mp4 -show_format -show_streams -show_frames"
+            argument = "-ffmpeg -i $(SRCROOT)/../Test/Big_Buck_Bunny_1080_10s_1MB.mp4 -y $(SRCROOT)/../Test/Output.m4v"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_format -show_streams -show_frames"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_format -show_entries format=size"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_entries format=size"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-version"
@@ -69,10 +81,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-codecs"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-license"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

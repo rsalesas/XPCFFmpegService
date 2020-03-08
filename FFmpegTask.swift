@@ -41,7 +41,7 @@ public class FFmpegTask {
                                         "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
     private static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
     private static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal", "-noshow_private_data", ]
-    private static let InvalidFlags = ["-version", "-L", "-h", "-?", "-help", "--help", "-cpuflags", "-sources", "-sinks", "-byte_binary_prefix", "-show_private_data",
+    private static let InvalidFlags = ["-version", "-L", "-h", "-?", "-help", "--help", "-cpuflags", "-sources", "-sinks", "-byte_binary_prefix",
                                        "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
                                        "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
     
@@ -86,7 +86,7 @@ public class FFmpegTask {
         setlinebuf(fdopen(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, "w"))
         
         dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
-        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = processProxyStandardError
+        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = flushProxyStandardError
         setlinebuf(fdopen(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, "w"))
         
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
@@ -99,15 +99,15 @@ public class FFmpegTask {
         //
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
         atexit {
-            // Close stdout and stderr and process any pending data  // TODO: Should we do the progress processor too?
+            // Close stdout and stderr and process any pending data
             synchronized(FFmpegTask.Application) {
-                FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.closeFile()
-                FileHandle.standardOutput.closeFile()
                 FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForWriting.closeFile()
                 FileHandle.standardError.closeFile()
+                FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.closeFile()
+                FileHandle.standardOutput.closeFile()
                 
-                FFmpegTask.Application.processProxyStandardOutput(fileHandle: FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForReading)
-                FFmpegTask.Application.processProxyStandardError(fileHandle: FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForReading)
+                FFmpegTask.Application.flushProxyStandardError(fileHandle: FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForReading)
+                FFmpegTask.Application.flushProxyStandardOutput(fileHandle: FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForReading)
 
                 FFmpegTask.Application.progressHandler.processLastProgress()
             }
@@ -130,7 +130,7 @@ public class FFmpegTask {
     
     // Output an error message in json format "{type:error,description:message}"
     // This method is a bit different in that it prints each processed error separately
-    private func processProxyStandardError(fileHandle: FileHandle) {
+    private func flushProxyStandardError(fileHandle: FileHandle) {
         synchronized(FFmpegTask.Application) {
             let data = fileHandle.availableData
             if !data.isEmpty, let error = FFmpegError(from: data) {
@@ -151,7 +151,7 @@ public class FFmpegTask {
         }
     }
 
-    private func processProxyStandardOutput(fileHandle: FileHandle) {
+    private func flushProxyStandardOutput(fileHandle: FileHandle) {
         synchronized(FFmpegTask.Application) {
             standardOutputBuffer.append(fileHandle.availableData)
             
@@ -167,18 +167,7 @@ public class FFmpegTask {
             }
         }
     }
-
-    // Passes the data through. Special cases are dealt with in separate functions, this assumes the results are in json (or readable in some manner)
-    private func passthroughProxyStandardOutput(fileHandle: FileHandle) {
-        synchronized(FFmpegTask.Application) {
-            let data = fileHandle.availableData
-            if !data.isEmpty {
-                defaultStandardOutputPipe.fileHandleForWriting.write(data)
-                defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
-            }
-        }
-    }
-    
+  
     private func invokeFFmpeg(argument: String) -> Int32 {
         return invokeFFmpeg(arguments: [argument])
     }
@@ -212,6 +201,7 @@ public class FFmpegTask {
             printError("No valid request provided. Must be one of \(FFmpegTask.ValidRequests)")
             return EXIT_FAILURE
         }
+        
         
         // Check the request to determine what service to call
         switch request {
@@ -266,7 +256,7 @@ public class FFmpegTask {
         default:
             // Ensure we have sufficient arguments for ffmpeg and ffprobe
             if arguments.count <= 2 {
-                printError("Insufficent arguments for request \"\(request)\"")
+                printError("Insufficent arguments")
                 return EXIT_FAILURE
             }
             
@@ -282,16 +272,16 @@ public class FFmpegTask {
             
             // Check the request to determine what service to call
             if request == "-ffmpeg" {
-                proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = passthroughProxyStandardOutput
+                registerOutputHandler(handler: FFmpegPassthrough.self)
                 return invokeFFmpeg(arguments: ["-progress", "pipe:\(progressHandler.fileDescriptor)"] + newArguments)
                 
             } else if request == "-ffprobe" {
-                proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = passthroughProxyStandardOutput
+                registerOutputHandler(handler: FFmpegPassthrough.self)
                 return invokeFFprobe(arguments: newArguments)
-                
             }
         }
-           
+        
+        printError("Inavlid arguments")
         return EXIT_FAILURE
     }
 }

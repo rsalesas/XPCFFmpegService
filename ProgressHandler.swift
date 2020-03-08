@@ -12,7 +12,7 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 class FFmpegProgress: Encodable {
     
-    private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
+    private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
 
     var frame: Int
     var fps: Double
@@ -25,7 +25,7 @@ class FFmpegProgress: Encodable {
     var duplicateFrames: Int
     var droppedFrames: Int
     var speed: Int?
-    var finished: Bool = false
+    var finished: Bool
    
     
     required init?(from: Data, trailingData: inout Data?) {
@@ -124,8 +124,6 @@ class ProgressHandler {
     
     func processLastProgress() {
         progressPipe.fileHandleForWriting.closeFile()
-        //FileHandle.standardError.closeFile()
-        
         processProgress(fileHandle: progressPipe.fileHandleForReading)
     }
 

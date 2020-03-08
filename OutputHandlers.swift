@@ -20,7 +20,7 @@ protocol FFmpegOutputHandler: Encodable {
 
 extension FFmpegOutputHandler {
     
-    func toJSONData() -> Data?{
+    func toJSONData() -> Data? {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.withoutEscapingSlashes] //, .sortedKeys, .prettyPrinted]
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -28,6 +28,21 @@ extension FFmpegOutputHandler {
         return try? encoder.encode(self)
     }
 }
+
+
+struct FFmpegPassthrough: FFmpegOutputHandler {
+    public let data: Data
+
+    
+    init?(from: Data) {
+        data = from
+    }
+    
+    func toJSONData() -> Data? {
+        return data
+    }
+}
+
 
 struct FFmpegError {
     private static let RegExPattern = #"(?:^.*\[(?<Type>(?:info)|(?:error)|(?:warning))\]\s(?:\:\s)*(?<Description>.*?)\s*$)|(?:^(?<Unknown>.*)$)"#
@@ -567,3 +582,4 @@ struct FFmpegVersion: FFmpegOutputHandler {
         }
     }
 }
+
