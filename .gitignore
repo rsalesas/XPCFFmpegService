@@ -1,6 +1,5 @@
 
 # Ignore ffmpeg lib and include files
-FFmpeg/
 include/
 lib/
 
