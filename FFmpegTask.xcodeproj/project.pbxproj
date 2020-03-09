@@ -66,14 +66,6 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
-		E15CE3E924168E0C0067782A /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = include/config.h; sourceTree = SOURCE_ROOT; };
-		E15CE3F824168EE40067782A /* ffmpeg_hw.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_hw.c; sourceTree = "<group>"; };
-		E15CE3F924168EE40067782A /* cmdutils.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = cmdutils.c; sourceTree = "<group>"; };
-		E15CE3FA24168EE40067782A /* cmdutils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cmdutils.h; sourceTree = "<group>"; };
-		E15CE3FB24168EE50067782A /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_videotoolbox.c; sourceTree = "<group>"; };
-		E15CE3FC24168EE50067782A /* ffmpeg_filter.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_filter.c; sourceTree = "<group>"; };
-		E15CE3FD24168EE50067782A /* ffmpeg_qsv.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_qsv.c; sourceTree = "<group>"; };
-		E15CE3FE24168EE50067782A /* ffmpeg_opt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_opt.c; sourceTree = "<group>"; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputHandlers.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
@@ -137,7 +129,7 @@
 		E15CE3E724164E010067782A /* FFmpegTask */ = {
 			isa = PBXGroup;
 			children = (
-				E15CE3F724168ED70067782A /* FFmpegTools */,
+				E15CE3FF241697660067782A /* FFmpegTools */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
 				E14F638423866D6D006C7AA5 /* ffmpeg.h */,
@@ -148,24 +140,15 @@
 				E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */,
 				E1134D6C23C09F4D00614692 /* ProgressHandler.swift */,
 				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
-				E1B64106238A9410006F6502 /* fftools */,
 			);
 			path = FFmpegTask;
 			sourceTree = "<group>";
 		};
-		E15CE3F724168ED70067782A /* FFmpegTools */ = {
+		E15CE3FF241697660067782A /* FFmpegTools */ = {
 			isa = PBXGroup;
 			children = (
-				E15CE3F924168EE40067782A /* cmdutils.c */,
-				E15CE3FA24168EE40067782A /* cmdutils.h */,
-				E15CE3FC24168EE50067782A /* ffmpeg_filter.c */,
-				E15CE3F824168EE40067782A /* ffmpeg_hw.c */,
-				E15CE3FE24168EE50067782A /* ffmpeg_opt.c */,
-				E15CE3FD24168EE50067782A /* ffmpeg_qsv.c */,
-				E15CE3FB24168EE50067782A /* ffmpeg_videotoolbox.c */,
-				E15CE3E924168E0C0067782A /* config.h */,
 			);
-			path = FFmpegTools;
+			name = FFmpegTools;
 			sourceTree = "<group>";
 		};
 		E19CFE8E2377D61100499A02 = {
@@ -214,14 +197,6 @@
 				E192A7BB237E5E080026A4D9 /* libx265.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		E1B64106238A9410006F6502 /* fftools */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = fftools;
-			path = ..;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
