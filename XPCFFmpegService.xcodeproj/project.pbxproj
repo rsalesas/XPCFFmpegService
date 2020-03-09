@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1134D6C23C09F4D00614692 /* ProgressHandler.swift */; };
+		E12513FC2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */; };
+		E12513FE2416B02800F0BEAF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FD2416B02800F0BEAF /* main.swift */; };
+		E12514052416B27800F0BEAF /* XPCFFmpegServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */; };
+		E12514062416B27D00F0BEAF /* XPCFFmpegService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
 		E15CE41824169A300067782A /* ffmpeg_hw.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41224169A2F0067782A /* ffmpeg_hw.c */; };
@@ -46,6 +50,16 @@
 		E1B64104238A91FD006F6502 /* descriptors.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B64102238A908C006F6502 /* descriptors.c */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E12514032416B04B00F0BEAF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E19CFE8F2377D61100499A02 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B640D8238A8B28006F6502;
+			remoteInfo = FFmpegTask;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		E1B640D7238A8B28006F6502 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -60,6 +74,12 @@
 
 /* Begin PBXFileReference section */
 		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
+		E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = XPCFFmpegService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
+		E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegServiceProtocol.swift; sourceTree = "<group>"; };
+		E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegService.swift; sourceTree = "<group>"; };
+		E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegServiceDelegate.swift; sourceTree = "<group>"; };
+		E12513FD2416B02800F0BEAF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		E12513FF2416B02800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
@@ -103,6 +123,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E12513F42416B02800F0BEAF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1B640D6238A8B28006F6502 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,6 +164,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E12513F82416B02800F0BEAF /* XPCFFmpegService */ = {
+			isa = PBXGroup;
+			children = (
+				E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */,
+				E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */,
+				E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */,
+				E12513FD2416B02800F0BEAF /* main.swift */,
+				E12513FF2416B02800F0BEAF /* Info.plist */,
+			);
+			path = XPCFFmpegService;
+			sourceTree = "<group>";
+		};
 		E15CE3E724164E010067782A /* FFmpegTask */ = {
 			isa = PBXGroup;
 			children = (
@@ -168,18 +207,11 @@
 			name = FFmpegTools;
 			sourceTree = "<group>";
 		};
-		E15CE41C2416ABB80067782A /* XPCFFmpegService */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = XPCFFmpegService;
-			sourceTree = "<group>";
-		};
 		E19CFE8E2377D61100499A02 = {
 			isa = PBXGroup;
 			children = (
-				E15CE41C2416ABB80067782A /* XPCFFmpegService */,
 				E15CE3E724164E010067782A /* FFmpegTask */,
+				E12513F82416B02800F0BEAF /* XPCFFmpegService */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
 			);
@@ -189,6 +221,7 @@
 			isa = PBXGroup;
 			children = (
 				E1B640D9238A8B28006F6502 /* FFmpegTask */,
+				E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -227,6 +260,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E12513F62416B02800F0BEAF /* XPCFFmpegService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E12514002416B02800F0BEAF /* Build configuration list for PBXNativeTarget "XPCFFmpegService" */;
+			buildPhases = (
+				E12513F32416B02800F0BEAF /* Sources */,
+				E12513F42416B02800F0BEAF /* Frameworks */,
+				E12513F52416B02800F0BEAF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E12514042416B04B00F0BEAF /* PBXTargetDependency */,
+			);
+			name = XPCFFmpegService;
+			productName = XPCFFmpegService;
+			productReference = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */;
+			productType = "com.apple.product-type.xpc-service";
+		};
 		E1B640D8238A8B28006F6502 /* FFmpegTask */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E1B640DD238A8B28006F6502 /* Build configuration list for PBXNativeTarget "FFmpegTask" */;
@@ -255,6 +306,9 @@
 				LastUpgradeCheck = 1120;
 				ORGANIZATIONNAME = "Robert Salesas";
 				TargetAttributes = {
+					E12513F62416B02800F0BEAF = {
+						CreatedOnToolsVersion = 11.3.1;
+					};
 					E1B640D8238A8B28006F6502 = {
 						CreatedOnToolsVersion = 11.2.1;
 					};
@@ -274,9 +328,20 @@
 			projectRoot = "";
 			targets = (
 				E1B640D8238A8B28006F6502 /* FFmpegTask */,
+				E12513F62416B02800F0BEAF /* XPCFFmpegService */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E12513F52416B02800F0BEAF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		E1FFC5962413A70800D30BE9 /* Make FFmpeg */ = {
@@ -302,6 +367,17 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E12513F32416B02800F0BEAF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12513FE2416B02800F0BEAF /* main.swift in Sources */,
+				E12513FC2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift in Sources */,
+				E12514062416B27D00F0BEAF /* XPCFFmpegService.swift in Sources */,
+				E12514052416B27800F0BEAF /* XPCFFmpegServiceProtocol.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1B640D5238A8B28006F6502 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -324,7 +400,53 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E12514042416B04B00F0BEAF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B640D8238A8B28006F6502 /* FFmpegTask */;
+			targetProxy = E12514032416B04B00F0BEAF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		E12514012416B02800F0BEAF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 89677882UG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = XPCFFmpegService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.XPCFFmpegService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E12514022416B02800F0BEAF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 89677882UG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = XPCFFmpegService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.XPCFFmpegService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		E19CFE9C2377D61100499A02 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -477,6 +599,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E12514002416B02800F0BEAF /* Build configuration list for PBXNativeTarget "XPCFFmpegService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E12514012416B02800F0BEAF /* Debug */,
+				E12514022416B02800F0BEAF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpegService" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
