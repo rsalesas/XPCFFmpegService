@@ -260,7 +260,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpeg" */;
+			buildConfigurationList = E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpegService" */;
 			compatibilityVersion = "Xcode 11.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -477,7 +477,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpeg" */ = {
+		E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpegService" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E19CFE9C2377D61100499A02 /* Debug */,

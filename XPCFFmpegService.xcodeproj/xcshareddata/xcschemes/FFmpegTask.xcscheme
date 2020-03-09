@@ -17,7 +17,7 @@
                BlueprintIdentifier = "E1B640D8238A8B28006F6502"
                BuildableName = "FFmpegTask"
                BlueprintName = "FFmpegTask"
-               ReferencedContainer = "container:XPCFFmpeg.xcodeproj">
+               ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "E1B640D8238A8B28006F6502"
             BuildableName = "FFmpegTask"
             BlueprintName = "FFmpegTask"
-            ReferencedContainer = "container:XPCFFmpeg.xcodeproj">
+            ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -98,7 +98,7 @@
             BlueprintIdentifier = "E1B640D8238A8B28006F6502"
             BuildableName = "FFmpegTask"
             BlueprintName = "FFmpegTask"
-            ReferencedContainer = "container:XPCFFmpeg.xcodeproj">
+            ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
