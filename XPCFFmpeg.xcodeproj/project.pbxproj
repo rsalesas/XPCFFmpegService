@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1134D6C23C09F4D00614692 /* ProgressHandler.swift */; };
+		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
+		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
+		E15CE41824169A300067782A /* ffmpeg_hw.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41224169A2F0067782A /* ffmpeg_hw.c */; };
+		E15CE41924169A300067782A /* ffmpeg_filter.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41324169A2F0067782A /* ffmpeg_filter.c */; };
+		E15CE41A24169A300067782A /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41424169A2F0067782A /* cmdutils.c */; };
 		E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */; };
 		E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */; };
 		E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
@@ -57,7 +62,6 @@
 		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
-		E14F638423866D6D006C7AA5 /* ffmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ffmpeg.h; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
 		E14F63942387958C006C7AA5 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = ../FFmpeg/lib/libswscale.a; sourceTree = "<group>"; };
 		E14F63952387958C006C7AA5 /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../FFmpeg/lib/libavfilter.a; sourceTree = "<group>"; };
@@ -66,6 +70,13 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
+		E15CE40E24169A2F0067782A /* ffmpeg_opt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_opt.c; path = FFmpeg/fftools/ffmpeg_opt.c; sourceTree = SOURCE_ROOT; };
+		E15CE41024169A2F0067782A /* cmdutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmdutils.h; path = FFmpeg/fftools/cmdutils.h; sourceTree = SOURCE_ROOT; };
+		E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_videotoolbox.c; path = FFmpeg/fftools/ffmpeg_videotoolbox.c; sourceTree = SOURCE_ROOT; };
+		E15CE41224169A2F0067782A /* ffmpeg_hw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_hw.c; path = FFmpeg/fftools/ffmpeg_hw.c; sourceTree = SOURCE_ROOT; };
+		E15CE41324169A2F0067782A /* ffmpeg_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_filter.c; path = FFmpeg/fftools/ffmpeg_filter.c; sourceTree = SOURCE_ROOT; };
+		E15CE41424169A2F0067782A /* cmdutils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmdutils.c; path = FFmpeg/fftools/cmdutils.c; sourceTree = SOURCE_ROOT; };
+		E15CE41B24169EFE0067782A /* ffmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ffmpeg.h; path = FFmpeg/fftools/ffmpeg.h; sourceTree = SOURCE_ROOT; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputHandlers.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
@@ -132,9 +143,6 @@
 				E15CE3FF241697660067782A /* FFmpegTools */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
-				E14F638423866D6D006C7AA5 /* ffmpeg.h */,
-				E14F638323866D6D006C7AA5 /* ffmpeg.c */,
-				E14F637F23866D6D006C7AA5 /* ffprobe.c */,
 				E1B640DB238A8B28006F6502 /* main.swift */,
 				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
 				E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */,
@@ -147,6 +155,15 @@
 		E15CE3FF241697660067782A /* FFmpegTools */ = {
 			isa = PBXGroup;
 			children = (
+				E15CE41424169A2F0067782A /* cmdutils.c */,
+				E15CE41024169A2F0067782A /* cmdutils.h */,
+				E15CE41324169A2F0067782A /* ffmpeg_filter.c */,
+				E15CE41224169A2F0067782A /* ffmpeg_hw.c */,
+				E15CE40E24169A2F0067782A /* ffmpeg_opt.c */,
+				E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */,
+				E15CE41B24169EFE0067782A /* ffmpeg.h */,
+				E14F638323866D6D006C7AA5 /* ffmpeg.c */,
+				E14F637F23866D6D006C7AA5 /* ffprobe.c */,
 			);
 			name = FFmpegTools;
 			sourceTree = "<group>";
@@ -235,7 +252,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E19CFE922377D61100499A02 /* Build configuration list for PBXProject "FFmpegTask" */;
+			buildConfigurationList = E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpeg" */;
 			compatibilityVersion = "Xcode 11.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -272,7 +289,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Set this to see all commands executing\n# set -e\n\n# Check that FFmpeg is cloned as a submodule\nif [ ! -d ${PROJECT_DIR}/FFmpeg ]; then\n    echo \"ERROR: FFmpeg folder is missing.\"\n    exit 1\nfi\n\n# Check that HomeBrew is installed\nif ! which brew > /dev/null; then\n  echo \"ERROR: brew is missing.\"\n  exit 1\nfi\n\n# Check that nasm is installed\nif ! brew ls --versions nasm > /dev/null; then\n    echo \"ERROR: nasm is missing.\"\n    exit 1\nfi\n\n# Check that pkg-config is installed\nif ! brew ls --versions pkg-config > /dev/null; then\n    echo \"ERROR: pkg-config is missing.\"\n    exit 1\nfi\n\n# Check that x264 is installed\nif ! brew ls --versions x264 > /dev/null; then\n    echo \"ERROR: x264 is missing.\"\n    exit 1\nfi\n\n# Check that x265 is installed\nif ! brew ls --versions x265 > /dev/null; then\n    echo \"ERROR: x265 is missing.\"\n    exit 1\nfi\n\n# Copy the x264 and x265 .a files to the main folder\nditto /usr/local/lib/libx264.a ${PROJECT_DIR}/lib/libx264.a\nditto /usr/local/lib/libx265.a ${PROJECT_DIR}/lib/libx265.a\n\n# Clone FFmpeg if it's not already there, and otherwise update it\n#if [ ! -d ${PROJECT_DIR}/FFmpeg ]; then\n#    mkdir -p ${PROJECT_DIR}/FFmpeg;\n#    git clone -b release/4.2 https://github.com/FFmpeg/FFmpeg.git \"${PROJECT_DIR}/FFmpeg\";\n#else\n#    # git fetch ${PROJECT_DIR}/FFmpeg\n#    exit 0\n#fi\n\n# Create the build directory if it doesn't already exist\nmkdir -p ${CONFIGURATION_BUILD_DIR}\n\n# Set the ffmpeg configuration\ncd ${PROJECT_DIR}/FFmpeg\n./configure --prefix=${CONFIGURATION_BUILD_DIR} --arch=x86_64 cc=\"clang\" \\\n    --extra-cflags=\"-fno-stack-check -mmacosx-version-min=10.13\" --pkg-config=\"pkg-config --static\" \\\n    --libdir=${PROJECT_DIR}/lib --incdir=${PROJECT_DIR}/include --shlibdir=${PROJECT_DIR}/Frameworks \\\n    --fatal-warnings --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3 \\\n    --disable-avresample --disable-sdl2 --disable-bzlib --disable-xlib --disable-zlib \\\n    --enable-libx264 --enable-libx265 \\\n    --disable-programs --disable-doc \n\n# Copy config.h to the main folder\nditto ${PROJECT_DIR}/FFmpeg/config.h ${PROJECT_DIR}/include/config.h\n\n# Make the ffmpeg project\nmake\nmake install\ncd -\n\n# Copy missing .h files to main folder\nditto ${PROJECT_DIR}/FFmpeg/libavresample/avresample.h ${PROJECT_DIR}/include/libavresample/avresample.h\nditto ${PROJECT_DIR}/FFmpeg/libavresample/version.h ${PROJECT_DIR}/include/libavresample/version.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/network.h ${PROJECT_DIR}/include/libavformat/network.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/url.h ${PROJECT_DIR}/include/libavformat/url.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/os_support.h ${PROJECT_DIR}/include/libavformat/os_support.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/libm.h ${PROJECT_DIR}/include/libavutil/libm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/internal.h ${PROJECT_DIR}/include/libavutil/internal.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/timer.h ${PROJECT_DIR}/include/libavutil/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/reverse.h ${PROJECT_DIR}/include/libavutil/reverse.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/thread.h ${PROJECT_DIR}/include/libavutil/thread.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/asm.h ${PROJECT_DIR}/include/libavutil/x86/asm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/timer.h ${PROJECT_DIR}/include/libavutil/x86/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/emms.h ${PROJECT_DIR}/include/libavutil/x86/emms.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/mathops.h ${PROJECT_DIR}/include/libavcodec/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/x86/mathops.h ${PROJECT_DIR}/include/libavcodec/x86/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/compat/va_copy.h ${PROJECT_DIR}/include/compat/va_copy.h\n\nexit 0\n";
+			shellScript = "# Set this to see all commands executing\n# set -e\n\n# Check that FFmpeg is cloned as a submodule\nif [ ! -d ${PROJECT_DIR}/FFmpeg ]; then\n    echo \"ERROR: FFmpeg folder is missing.\"\n    exit 1\nelse\n    git fetch ${PROJECT_DIR}/FFmpeg\nfi\n\n# Check that HomeBrew is installed\nif ! which brew > /dev/null; then\n  echo \"ERROR: brew is missing.\"\n  exit 1\nfi\n\n# Check that nasm is installed\nif ! brew ls --versions nasm > /dev/null; then\n    echo \"ERROR: nasm is missing.\"\n    exit 1\nfi\n\n# Check that pkg-config is installed\nif ! brew ls --versions pkg-config > /dev/null; then\n    echo \"ERROR: pkg-config is missing.\"\n    exit 1\nfi\n\n# Check that x264 is installed\nif ! brew ls --versions x264 > /dev/null; then\n    echo \"ERROR: x264 is missing.\"\n    exit 1\nfi\n\n# Check that x265 is installed\nif ! brew ls --versions x265 > /dev/null; then\n    echo \"ERROR: x265 is missing.\"\n    exit 1\nfi\n\n# Copy the x264 and x265 .a files to the main folder\nditto /usr/local/lib/libx264.a ${PROJECT_DIR}/lib/libx264.a\nditto /usr/local/lib/libx265.a ${PROJECT_DIR}/lib/libx265.a\n\n\n# Create the build directory if it doesn't already exist\nmkdir -p ${CONFIGURATION_BUILD_DIR}\n\n# Set the ffmpeg configuration\ncd ${PROJECT_DIR}/FFmpeg\n./configure --prefix=${CONFIGURATION_BUILD_DIR} --arch=x86_64 cc=\"clang\" \\\n    --extra-cflags=\"-fno-stack-check -mmacosx-version-min=10.13\" --pkg-config=\"pkg-config --static\" \\\n    --libdir=${PROJECT_DIR}/lib --incdir=${PROJECT_DIR}/include --shlibdir=${PROJECT_DIR}/Frameworks \\\n    --fatal-warnings --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3 \\\n    --disable-avresample --disable-sdl2 --disable-bzlib --disable-xlib --disable-zlib \\\n    --enable-libx264 --enable-libx265 \\\n    --disable-programs --disable-doc \n\n# Copy config.h to the main folder\nditto ${PROJECT_DIR}/FFmpeg/config.h ${PROJECT_DIR}/include/config.h\n\n# Make the ffmpeg project\nmake\nmake install\ncd -\n\n# Copy missing .h files to main folder\nditto ${PROJECT_DIR}/FFmpeg/libavresample/avresample.h ${PROJECT_DIR}/include/libavresample/avresample.h\nditto ${PROJECT_DIR}/FFmpeg/libavresample/version.h ${PROJECT_DIR}/include/libavresample/version.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/network.h ${PROJECT_DIR}/include/libavformat/network.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/url.h ${PROJECT_DIR}/include/libavformat/url.h\nditto ${PROJECT_DIR}/FFmpeg/libavformat/os_support.h ${PROJECT_DIR}/include/libavformat/os_support.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/libm.h ${PROJECT_DIR}/include/libavutil/libm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/internal.h ${PROJECT_DIR}/include/libavutil/internal.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/timer.h ${PROJECT_DIR}/include/libavutil/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/reverse.h ${PROJECT_DIR}/include/libavutil/reverse.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/thread.h ${PROJECT_DIR}/include/libavutil/thread.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/asm.h ${PROJECT_DIR}/include/libavutil/x86/asm.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/timer.h ${PROJECT_DIR}/include/libavutil/x86/timer.h\nditto ${PROJECT_DIR}/FFmpeg/libavutil/x86/emms.h ${PROJECT_DIR}/include/libavutil/x86/emms.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/mathops.h ${PROJECT_DIR}/include/libavcodec/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/libavcodec/x86/mathops.h ${PROJECT_DIR}/include/libavcodec/x86/mathops.h\nditto ${PROJECT_DIR}/FFmpeg/compat/va_copy.h ${PROJECT_DIR}/include/compat/va_copy.h\n\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -284,9 +301,14 @@
 				E1B640E8238A8F07006F6502 /* ffprobe.c in Sources */,
 				E1B64104238A91FD006F6502 /* descriptors.c in Sources */,
 				E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */,
+				E15CE41824169A300067782A /* ffmpeg_hw.c in Sources */,
+				E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */,
 				E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */,
 				E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */,
+				E15CE41924169A300067782A /* ffmpeg_filter.c in Sources */,
+				E15CE41A24169A300067782A /* cmdutils.c in Sources */,
 				E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */,
+				E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */,
 				E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */,
 				E1B640DC238A8B28006F6502 /* main.swift in Sources */,
 			);
@@ -447,7 +469,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E19CFE922377D61100499A02 /* Build configuration list for PBXProject "FFmpegTask" */ = {
+		E19CFE922377D61100499A02 /* Build configuration list for PBXProject "XPCFFmpeg" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E19CFE9C2377D61100499A02 /* Debug */,

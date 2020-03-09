@@ -11,7 +11,13 @@
 const char program_name[] = "FFmpegTask";
 const int program_birth_year = 2020;
 
-void show_help_default(const char *opt, const char *arg)
+
+// We do this here in order to not have to change the one in ffmpeg_opt.c as it is added by reference.
+#define show_help_default() show_help_default_2()
+
+void show_help_default_2(const char *opt, const char *arg)
 {
     // Empty function as we don't ever show help
 }
+
+
