@@ -168,9 +168,17 @@
 			name = FFmpegTools;
 			sourceTree = "<group>";
 		};
+		E15CE41C2416ABB80067782A /* XPCFFmpegService */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = XPCFFmpegService;
+			sourceTree = "<group>";
+		};
 		E19CFE8E2377D61100499A02 = {
 			isa = PBXGroup;
 			children = (
+				E15CE41C2416ABB80067782A /* XPCFFmpegService */,
 				E15CE3E724164E010067782A /* FFmpegTask */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
