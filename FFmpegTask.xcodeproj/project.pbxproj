@@ -12,12 +12,6 @@
 		E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */; };
 		E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
 		E1B640DC238A8B28006F6502 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B640DB238A8B28006F6502 /* main.swift */; };
-		E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638023866D6D006C7AA5 /* cmdutils.c */; };
-		E1B640E2238A8EF5006F6502 /* ffmpeg_cuvid.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */; };
-		E1B640E3238A8EF8006F6502 /* ffmpeg_filter.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638623866D6D006C7AA5 /* ffmpeg_filter.c */; };
-		E1B640E4238A8EFC006F6502 /* ffmpeg_hw.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638123866D6D006C7AA5 /* ffmpeg_hw.c */; };
-		E1B640E5238A8EFE006F6502 /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638523866D6D006C7AA5 /* ffmpeg_opt.c */; };
-		E1B640E6238A8F01006F6502 /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F637C23866D6D006C7AA5 /* ffmpeg_videotoolbox.c */; };
 		E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638323866D6D006C7AA5 /* ffmpeg.c */; };
 		E1B640E8238A8F07006F6502 /* ffprobe.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F637F23866D6D006C7AA5 /* ffprobe.c */; };
 		E1B640EA238A903F006F6502 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E14F63982387958C006C7AA5 /* libavcodec.a */; };
@@ -61,16 +55,9 @@
 
 /* Begin PBXFileReference section */
 		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
-		E14F637C23866D6D006C7AA5 /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_videotoolbox.c; sourceTree = "<group>"; };
-		E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_cuvid.c; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
-		E14F638023866D6D006C7AA5 /* cmdutils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cmdutils.c; sourceTree = "<group>"; };
-		E14F638123866D6D006C7AA5 /* ffmpeg_hw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_hw.c; sourceTree = "<group>"; };
-		E14F638223866D6D006C7AA5 /* cmdutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cmdutils.h; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F638423866D6D006C7AA5 /* ffmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ffmpeg.h; sourceTree = "<group>"; };
-		E14F638523866D6D006C7AA5 /* ffmpeg_opt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_opt.c; sourceTree = "<group>"; };
-		E14F638623866D6D006C7AA5 /* ffmpeg_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg_filter.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
 		E14F63942387958C006C7AA5 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = ../FFmpeg/lib/libswscale.a; sourceTree = "<group>"; };
 		E14F63952387958C006C7AA5 /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../FFmpeg/lib/libavfilter.a; sourceTree = "<group>"; };
@@ -79,6 +66,14 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
+		E15CE3E924168E0C0067782A /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = include/config.h; sourceTree = SOURCE_ROOT; };
+		E15CE3F824168EE40067782A /* ffmpeg_hw.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_hw.c; sourceTree = "<group>"; };
+		E15CE3F924168EE40067782A /* cmdutils.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = cmdutils.c; sourceTree = "<group>"; };
+		E15CE3FA24168EE40067782A /* cmdutils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cmdutils.h; sourceTree = "<group>"; };
+		E15CE3FB24168EE50067782A /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_videotoolbox.c; sourceTree = "<group>"; };
+		E15CE3FC24168EE50067782A /* ffmpeg_filter.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_filter.c; sourceTree = "<group>"; };
+		E15CE3FD24168EE50067782A /* ffmpeg_qsv.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_qsv.c; sourceTree = "<group>"; };
+		E15CE3FE24168EE50067782A /* ffmpeg_opt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ffmpeg_opt.c; sourceTree = "<group>"; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputHandlers.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
@@ -98,7 +93,6 @@
 		E19CFF9E23792C8700499A02 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		E19CFFA0237932CE00499A02 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FFmpegTask.swift; sourceTree = "<group>"; };
-		E1B1EC4C238D0D2F009DE7C4 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		E1B640D2238A8A55006F6502 /* bridging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bridging.h; sourceTree = "<group>"; };
 		E1B640D9238A8B28006F6502 /* FFmpegTask */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FFmpegTask; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B640DB238A8B28006F6502 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -140,25 +134,44 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		E1636B4523B705BE00CFA5A4 /* Interop */ = {
+		E15CE3E724164E010067782A /* FFmpegTask */ = {
 			isa = PBXGroup;
 			children = (
-			);
-			path = Interop;
-			sourceTree = "<group>";
-		};
-		E19CFE8E2377D61100499A02 = {
-			isa = PBXGroup;
-			children = (
-				E1636B4523B705BE00CFA5A4 /* Interop */,
-				E1B640DB238A8B28006F6502 /* main.swift */,
+				E15CE3F724168ED70067782A /* FFmpegTools */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
+				E14F638423866D6D006C7AA5 /* ffmpeg.h */,
+				E14F638323866D6D006C7AA5 /* ffmpeg.c */,
+				E14F637F23866D6D006C7AA5 /* ffprobe.c */,
+				E1B640DB238A8B28006F6502 /* main.swift */,
 				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
 				E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */,
 				E1134D6C23C09F4D00614692 /* ProgressHandler.swift */,
 				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
 				E1B64106238A9410006F6502 /* fftools */,
+			);
+			path = FFmpegTask;
+			sourceTree = "<group>";
+		};
+		E15CE3F724168ED70067782A /* FFmpegTools */ = {
+			isa = PBXGroup;
+			children = (
+				E15CE3F924168EE40067782A /* cmdutils.c */,
+				E15CE3FA24168EE40067782A /* cmdutils.h */,
+				E15CE3FC24168EE50067782A /* ffmpeg_filter.c */,
+				E15CE3F824168EE40067782A /* ffmpeg_hw.c */,
+				E15CE3FE24168EE50067782A /* ffmpeg_opt.c */,
+				E15CE3FD24168EE50067782A /* ffmpeg_qsv.c */,
+				E15CE3FB24168EE50067782A /* ffmpeg_videotoolbox.c */,
+				E15CE3E924168E0C0067782A /* config.h */,
+			);
+			path = FFmpegTools;
+			sourceTree = "<group>";
+		};
+		E19CFE8E2377D61100499A02 = {
+			isa = PBXGroup;
+			children = (
+				E15CE3E724164E010067782A /* FFmpegTask */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
 			);
@@ -206,19 +219,9 @@
 		E1B64106238A9410006F6502 /* fftools */ = {
 			isa = PBXGroup;
 			children = (
-				E1B1EC4C238D0D2F009DE7C4 /* config.h */,
-				E14F638023866D6D006C7AA5 /* cmdutils.c */,
-				E14F638223866D6D006C7AA5 /* cmdutils.h */,
-				E14F637E23866D6D006C7AA5 /* ffmpeg_cuvid.c */,
-				E14F638623866D6D006C7AA5 /* ffmpeg_filter.c */,
-				E14F638123866D6D006C7AA5 /* ffmpeg_hw.c */,
-				E14F638523866D6D006C7AA5 /* ffmpeg_opt.c */,
-				E14F637C23866D6D006C7AA5 /* ffmpeg_videotoolbox.c */,
-				E14F638323866D6D006C7AA5 /* ffmpeg.c */,
-				E14F638423866D6D006C7AA5 /* ffmpeg.h */,
-				E14F637F23866D6D006C7AA5 /* ffprobe.c */,
 			);
 			name = fftools;
+			path = ..;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -303,16 +306,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1B640E5238A8EFE006F6502 /* ffmpeg_opt.c in Sources */,
-				E1B640E2238A8EF5006F6502 /* ffmpeg_cuvid.c in Sources */,
-				E1B640E1238A8EEE006F6502 /* cmdutils.c in Sources */,
 				E1B640E8238A8F07006F6502 /* ffprobe.c in Sources */,
 				E1B64104238A91FD006F6502 /* descriptors.c in Sources */,
 				E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */,
-				E1B640E4238A8EFC006F6502 /* ffmpeg_hw.c in Sources */,
 				E1B1EC4B238D0D24009DE7C4 /* FFmpegTask.swift in Sources */,
-				E1B640E6238A8F01006F6502 /* ffmpeg_videotoolbox.c in Sources */,
-				E1B640E3238A8EF8006F6502 /* ffmpeg_filter.c in Sources */,
 				E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */,
 				E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */,
 				E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */,
@@ -446,7 +443,7 @@
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OBJC_BRIDGING_HEADER = bridging.h;
+				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
@@ -465,7 +462,7 @@
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OBJC_BRIDGING_HEADER = bridging.h;
+				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
