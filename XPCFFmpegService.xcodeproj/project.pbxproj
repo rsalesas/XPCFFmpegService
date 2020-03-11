@@ -8,10 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1134D6C23C09F4D00614692 /* ProgressHandler.swift */; };
-		E12513FC2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */; };
 		E12513FE2416B02800F0BEAF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FD2416B02800F0BEAF /* main.swift */; };
-		E12514052416B27800F0BEAF /* XPCFFmpegServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */; };
-		E12514062416B27D00F0BEAF /* XPCFFmpegService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */; };
+		E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */; };
+		E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125140D2416B4A600F0BEAF /* AppDelegate.swift */; };
+		E12514102416B4A600F0BEAF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125140F2416B4A600F0BEAF /* ContentView.swift */; };
+		E12514122416B4A800F0BEAF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514112416B4A800F0BEAF /* Assets.xcassets */; };
+		E12514152416B4A800F0BEAF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514142416B4A800F0BEAF /* Preview Assets.xcassets */; };
+		E12514182416B4A800F0BEAF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E12514162416B4A800F0BEAF /* Main.storyboard */; };
+		E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E12514232417E31700F0BEAF /* FFmpegTask in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E1B640D9238A8B28006F6502 /* FFmpegTask */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
 		E15CE41824169A300067782A /* ffmpeg_hw.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41224169A2F0067782A /* ffmpeg_hw.c */; };
@@ -58,9 +63,28 @@
 			remoteGlobalIDString = E1B640D8238A8B28006F6502;
 			remoteInfo = FFmpegTask;
 		};
+		E125141E2417358800F0BEAF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E19CFE8F2377D61100499A02 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E12513F62416B02800F0BEAF;
+			remoteInfo = XPCFFmpegService;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		E12514212417C02300F0BEAF /* Embed XPC Services */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/XPCServices";
+			dstSubfolderSpec = 16;
+			files = (
+				E12514232417E31700F0BEAF /* FFmpegTask in Embed XPC Services */,
+				E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */,
+			);
+			name = "Embed XPC Services";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1B640D7238A8B28006F6502 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -75,11 +99,17 @@
 /* Begin PBXFileReference section */
 		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
 		E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = XPCFFmpegService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
-		E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegServiceProtocol.swift; sourceTree = "<group>"; };
-		E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegService.swift; sourceTree = "<group>"; };
-		E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegServiceDelegate.swift; sourceTree = "<group>"; };
+		E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegService.swift; sourceTree = "<group>"; };
 		E12513FD2416B02800F0BEAF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		E12513FF2416B02800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestXPCFFmpegService.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E125140D2416B4A600F0BEAF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E125140F2416B4A600F0BEAF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		E12514112416B4A800F0BEAF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E12514142416B4A800F0BEAF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		E12514172416B4A800F0BEAF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		E12514192416B4A800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TestXPCFFmpegService.entitlements; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
@@ -130,6 +160,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E12514082416B4A600F0BEAF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1B640D6238A8B28006F6502 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -167,13 +204,33 @@
 		E12513F82416B02800F0BEAF /* XPCFFmpegService */ = {
 			isa = PBXGroup;
 			children = (
-				E12513F92416B02800F0BEAF /* XPCFFmpegServiceProtocol.swift */,
-				E12513FA2416B02800F0BEAF /* XPCFFmpegService.swift */,
-				E12513FB2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift */,
+				E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */,
 				E12513FD2416B02800F0BEAF /* main.swift */,
 				E12513FF2416B02800F0BEAF /* Info.plist */,
 			);
 			path = XPCFFmpegService;
+			sourceTree = "<group>";
+		};
+		E125140C2416B4A600F0BEAF /* TestXPCFFmpegService */ = {
+			isa = PBXGroup;
+			children = (
+				E125140D2416B4A600F0BEAF /* AppDelegate.swift */,
+				E125140F2416B4A600F0BEAF /* ContentView.swift */,
+				E12514112416B4A800F0BEAF /* Assets.xcassets */,
+				E12514162416B4A800F0BEAF /* Main.storyboard */,
+				E12514192416B4A800F0BEAF /* Info.plist */,
+				E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */,
+				E12514132416B4A800F0BEAF /* Preview Content */,
+			);
+			path = TestXPCFFmpegService;
+			sourceTree = "<group>";
+		};
+		E12514132416B4A800F0BEAF /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				E12514142416B4A800F0BEAF /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		E15CE3E724164E010067782A /* FFmpegTask */ = {
@@ -212,6 +269,7 @@
 			children = (
 				E15CE3E724164E010067782A /* FFmpegTask */,
 				E12513F82416B02800F0BEAF /* XPCFFmpegService */,
+				E125140C2416B4A600F0BEAF /* TestXPCFFmpegService */,
 				E19CFEF22378704900499A02 /* Frameworks */,
 				E19CFE982377D61100499A02 /* Products */,
 			);
@@ -222,6 +280,7 @@
 			children = (
 				E1B640D9238A8B28006F6502 /* FFmpegTask */,
 				E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */,
+				E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -278,6 +337,25 @@
 			productReference = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */;
 			productType = "com.apple.product-type.xpc-service";
 		};
+		E125140A2416B4A600F0BEAF /* TestXPCFFmpegService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E125141D2416B4A800F0BEAF /* Build configuration list for PBXNativeTarget "TestXPCFFmpegService" */;
+			buildPhases = (
+				E12514072416B4A600F0BEAF /* Sources */,
+				E12514082416B4A600F0BEAF /* Frameworks */,
+				E12514092416B4A600F0BEAF /* Resources */,
+				E12514212417C02300F0BEAF /* Embed XPC Services */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E125141F2417358800F0BEAF /* PBXTargetDependency */,
+			);
+			name = TestXPCFFmpegService;
+			productName = TestXPCFFmpegService;
+			productReference = E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */;
+			productType = "com.apple.product-type.application";
+		};
 		E1B640D8238A8B28006F6502 /* FFmpegTask */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E1B640DD238A8B28006F6502 /* Build configuration list for PBXNativeTarget "FFmpegTask" */;
@@ -302,11 +380,14 @@
 		E19CFE8F2377D61100499A02 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1120;
-				LastUpgradeCheck = 1120;
+				LastSwiftUpdateCheck = 1130;
+				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = "Robert Salesas";
 				TargetAttributes = {
 					E12513F62416B02800F0BEAF = {
+						CreatedOnToolsVersion = 11.3.1;
+					};
+					E125140A2416B4A600F0BEAF = {
 						CreatedOnToolsVersion = 11.3.1;
 					};
 					E1B640D8238A8B28006F6502 = {
@@ -329,6 +410,7 @@
 			targets = (
 				E1B640D8238A8B28006F6502 /* FFmpegTask */,
 				E12513F62416B02800F0BEAF /* XPCFFmpegService */,
+				E125140A2416B4A600F0BEAF /* TestXPCFFmpegService */,
 			);
 		};
 /* End PBXProject section */
@@ -338,6 +420,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12514092416B4A600F0BEAF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12514182416B4A800F0BEAF /* Main.storyboard in Resources */,
+				E12514152416B4A800F0BEAF /* Preview Assets.xcassets in Resources */,
+				E12514122416B4A800F0BEAF /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -372,9 +464,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				E12513FE2416B02800F0BEAF /* main.swift in Sources */,
-				E12513FC2416B02800F0BEAF /* XPCFFmpegServiceDelegate.swift in Sources */,
-				E12514062416B27D00F0BEAF /* XPCFFmpegService.swift in Sources */,
-				E12514052416B27800F0BEAF /* XPCFFmpegServiceProtocol.swift in Sources */,
+				E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12514072416B4A600F0BEAF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12514102416B4A600F0BEAF /* ContentView.swift in Sources */,
+				E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -406,7 +505,23 @@
 			target = E1B640D8238A8B28006F6502 /* FFmpegTask */;
 			targetProxy = E12514032416B04B00F0BEAF /* PBXContainerItemProxy */;
 		};
+		E125141F2417358800F0BEAF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E12513F62416B02800F0BEAF /* XPCFFmpegService */;
+			targetProxy = E125141E2417358800F0BEAF /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E12514162416B4A800F0BEAF /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E12514172416B4A800F0BEAF /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		E12514012416B02800F0BEAF /* Debug */ = {
@@ -443,6 +558,60 @@
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E125141B2416B4A800F0BEAF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
+				DEVELOPMENT_TEAM = 89677882UG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = TestXPCFFmpegService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E125141C2416B4A800F0BEAF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
+				DEVELOPMENT_TEAM = 89677882UG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = TestXPCFFmpegService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -502,7 +671,8 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 			};
 			name = Debug;
 		};
@@ -554,7 +724,9 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
-				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 			};
 			name = Release;
 		};
@@ -604,6 +776,15 @@
 			buildConfigurations = (
 				E12514012416B02800F0BEAF /* Debug */,
 				E12514022416B02800F0BEAF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E125141D2416B4A800F0BEAF /* Build configuration list for PBXNativeTarget "TestXPCFFmpegService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E125141B2416B4A800F0BEAF /* Debug */,
+				E125141C2416B4A800F0BEAF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
