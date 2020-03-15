@@ -91,7 +91,7 @@ struct FFmpegError {
 
 
 struct FFmpegCodecs: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s(?<Support>[DEVASILS\.]{6})\s+(?<Format>\S+)\s+(?<Description>.+)$"#  // -codecs
+    private static let RegExPattern = #"^\s(?<Support>[DEVASILS\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -codecs
 
     /*
      Values for "Support"
@@ -151,7 +151,7 @@ struct FFmpegCodecs: FFmpegOutputHandler {
 
 
 struct FFmpegBitstreamFilters: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?<Filter>(?!Bitstream filters:)\S+)$"#  // -filters
+    private static let RegExPattern = #"^(?<Filter>(?!Bitstream filters:)\S+)$"#  // -bsfs
     
     public let filters: [String]
     
@@ -206,7 +206,7 @@ struct FFmpegColors: FFmpegOutputHandler {
 
 
 struct FFmpegDecoders: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s(?<Support>[VASFXBD\.]{6})\s+(?<Format>\S+)\s+(?<Description>.+)$"#  // -decoders
+    private static let RegExPattern = #"^\s(?<Support>[VASFXBD\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -decoders
 
     /*
      Values for "Support"
@@ -570,8 +570,10 @@ struct FFmpegVersion: FFmpegOutputHandler {
         self.version = matchRegEx.matches[0, "Version"]
         self.compiler = matchRegEx.matches[0, "Compiler"]
         self.ffmpegCopyright = matchRegEx.matches[0, "FFmpegCopyright"]
-        self.configuration = matchRegEx.matches[0, "Configuration"]
         
+        // Retrieve the configuration but remove reference to folders
+        self.configuration = matchRegEx.matches[0, "Configuration"].replacingOccurrences(of: #"--\S+=\/\S+\s+"#, with: "", options: .regularExpression)
+                
         for index in 2...matchRegEx.matches.count - 1 {
             let library = matchRegEx.matches[index, "Library"]
             let major = matchRegEx.matches[index, "Major"]

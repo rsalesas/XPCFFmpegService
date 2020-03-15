@@ -61,7 +61,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ffmpeg -i $(SRCROOT)/../Test/Big_Buck_Bunny_1080_10s_1MB.mp4 -y $(SRCROOT)/../Test/Output.m4v"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_format -show_streams -show_frames"
@@ -81,7 +81,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-codecs"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

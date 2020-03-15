@@ -174,7 +174,7 @@ public class FFmpegTask {
     
     private func invokeFFmpeg(arguments: [String]) -> Int32 {
         let args = [CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags + arguments
-        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
+        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
         return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
     }
         
@@ -184,7 +184,7 @@ public class FFmpegTask {
     
     private func invokeFFprobe(arguments: [String]) -> Int32 {
         let args = [CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments
-        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator
+        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
         return ffprobe(Int32(cargs.count - 1), &cargs)  // Minus null terminator
     }
         

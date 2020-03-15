@@ -12,21 +12,21 @@ import XPCFFmpegService
 
 class MyServiceProxy {
     let connection: NSXPCConnection
-    let service: MyServiceProtocol
+    let service: XPCFFmegServiceProtocol
     
     init(){
         connection = NSXPCConnection(serviceName: "com.siliconink.XPCFFmpegService")
-        connection.remoteObjectInterface = NSXPCInterface(with: MyServiceProtocol.self)
+        connection.remoteObjectInterface = NSXPCInterface(with: XPCFFmegServiceProtocol.self)
         connection.resume()
         
         service = connection.remoteObjectProxyWithErrorHandler { error in
                 print("Received error:", error)
-            } as! MyServiceProtocol
+            } as! XPCFFmegServiceProtocol
     }
     
     func makeUppperCaseString(string: String, contentView: ContentView) {
-        service.upperCaseString("Hello XPC") { response in
-            contentView.string = response
+        service.invoke(request: string) { response, error  in
+            contentView.string = response ?? "(Unknown)"
         }
     }
 }
@@ -35,7 +35,7 @@ class MyServiceProxy {
 struct ContentView: View {
     let myService: MyServiceProxy = MyServiceProxy()
     
-    @State var string: String = "Hello World!"
+    @State var string: String = "-version"
 
     var body: some View {
         VStack {
