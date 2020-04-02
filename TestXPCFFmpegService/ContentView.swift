@@ -25,8 +25,8 @@ class MyServiceProxy {
     }
     
     func makeUppperCaseString(string: String, contentView: ContentView) {
-        service.invoke(request: string) { response, error  in
-            contentView.string = response ?? "(Unknown)"
+        service.invoke(request: string) { response, log, error  in
+            contentView.string = response ?? error.debugDescription
         }
     }
 }

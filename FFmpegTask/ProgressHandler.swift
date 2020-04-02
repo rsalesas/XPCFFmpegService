@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
@@ -95,7 +96,7 @@ class ProgressHandler {
     // This function relies on the fact that ffmpeg.c::print_report flushes after writing its buffers
     // TODO: Don't love that the synchronize is stuck here. Perhaps this method should live in FFmpegTask
     func processProgress(fileHandle: FileHandle) {
-        synchronized(FFmpegTask.Application) {
+        FFmpegTask.Application.mutex.synchronize {
             let data = fileHandle.availableData
             if data.isEmpty {
                 return

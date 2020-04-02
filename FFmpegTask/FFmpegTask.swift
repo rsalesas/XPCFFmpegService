@@ -11,23 +11,8 @@
 //
 
 import Foundation
+import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
-
-
-// Originally tested instead of using "atexit" - would have required a longjmp out however
-//@_cdecl("ffmpegTaskAtExit")
-//func AtExit() {
-//    fputs("hello from ffmpegTaskAtExit\n", stderr)
-//    fflush(stderr)
-//}
-
-/// Used to synchronize access to closures.
-@inlinable
-public func synchronized(_ lock: AnyObject, _ body: () throws -> Void) rethrows {
-    objc_sync_enter(lock)
-    defer { objc_sync_exit(lock) }
-    try body()
-}
 
 
 // This class is a non-thread safe singleton - be careful!
@@ -35,7 +20,8 @@ public class FFmpegTask {
     
     // Singleton - do not access this class in any other way.
     public static let Application = FFmpegTask()
-    
+    internal let mutex = MutexSynchronized()
+
     // Flags for running processes
     private static let ValidRequests = ["-ffmpeg", "-ffprobe", "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
                                         "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
@@ -43,7 +29,8 @@ public class FFmpegTask {
     private static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal", "-noshow_private_data", ]
     private static let InvalidFlags = ["-version", "-L", "-h", "-?", "-help", "--help", "-cpuflags", "-sources", "-sinks", "-byte_binary_prefix",
                                        "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
-                                       "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
+                                       "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters",
+                                       /* Disable non complex filters */ "-filter", "-vf", "-af"]
     
     // Null terminator for calling main(argc, argv)
     //private static let NullTerminator = [UnsafeMutablePointer<Int8>(0)]
@@ -58,7 +45,7 @@ public class FFmpegTask {
     private var standardOutputBuffer = Data(capacity: 4096)
     private var outputHandlerType: FFmpegOutputHandler.Type?
     private let progressHandler: ProgressHandler
-    
+        
     
     private func registerOutputHandler(handler: FFmpegOutputHandler.Type) {
         precondition(outputHandlerType == nil, "There is already an output handler registered.")
@@ -100,7 +87,7 @@ public class FFmpegTask {
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
         atexit {
             // Close stdout and stderr and process any pending data
-            synchronized(FFmpegTask.Application) {
+            FFmpegTask.Application.mutex.synchronize {
                 FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForWriting.closeFile()
                 FileHandle.standardError.closeFile()
                 FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.closeFile()
@@ -131,7 +118,7 @@ public class FFmpegTask {
     // Output an error message in json format "{type:error,description:message}"
     // This method is a bit different in that it prints each processed error separately
     private func flushProxyStandardError(fileHandle: FileHandle) {
-        synchronized(FFmpegTask.Application) {
+        mutex.synchronize {
             let data = fileHandle.availableData
             if !data.isEmpty, let error = FFmpegError(from: data) {
                 error.errors.forEach { error in
@@ -146,13 +133,13 @@ public class FFmpegTask {
     }
     
     private func appendProxyStandardOutputToBuffer(fileHandle: FileHandle) {
-        synchronized(FFmpegTask.Application) {
+        mutex.synchronize {
             standardOutputBuffer.append(fileHandle.availableData)
         }
     }
 
     private func flushProxyStandardOutput(fileHandle: FileHandle) {
-        synchronized(FFmpegTask.Application) {
+        mutex.synchronize {
             standardOutputBuffer.append(fileHandle.availableData)
             
             if !standardOutputBuffer.isEmpty, let outputHandlerType = outputHandlerType {
