@@ -11,7 +11,7 @@ import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
-class FFmpegProgress: Encodable {
+class FFmpegProgress2: Encodable {
     
     private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
 
@@ -30,7 +30,7 @@ class FFmpegProgress: Encodable {
    
     
     required init?(from: Data, trailingData: inout Data?) {
-        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegProgress.RegExPattern, options: []), matchRegEx.matches.count >= 1 else {
+        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegProgress2.RegExPattern, options: []), matchRegEx.matches.count >= 1 else {
             os_log("Invalid ffmpeg progress output; unexpected format", type: OSLogType.error)
             return nil
         }
@@ -96,30 +96,28 @@ class ProgressHandler {
     // This function relies on the fact that ffmpeg.c::print_report flushes after writing its buffers
     // TODO: Don't love that the synchronize is stuck here. Perhaps this method should live in FFmpegTask
     func processProgress(fileHandle: FileHandle) {
-        FFmpegTask.Application.mutex.synchronize {
-            let data = fileHandle.availableData
-            if data.isEmpty {
-                return
+        let data = fileHandle.availableData
+        if data.isEmpty {
+            return
+        }
+        
+        var trailingData: Data?
+        if let progress = FFmpegProgress2(from: data, trailingData: &trailingData) {
+            guard let jsonData = try? JSONEncoder().encode(progress) else {
+                fatalError("Unable to process progress information.")
             }
-            
-            var trailingData: Data?
-            if let progress = FFmpegProgress(from: data, trailingData: &trailingData) {
-                guard let jsonData = try? JSONEncoder().encode(progress) else {
-                    fatalError("Unable to process progress information.")
-                }
 
-                defaultStdErr.write(jsonData)
-                defaultStdErr.write(NewlineMarker)
-                defaultStdErr.synchronizeFile()
+            defaultStdErr.write(jsonData)
+            defaultStdErr.write(NewlineMarker)
+            defaultStdErr.synchronizeFile()
 
-                if let trailingData = trailingData {
-                    os_log("Trailing data in progress format received.")
-                    standardOutputBuffer.append(trailingData)
-                }
-            } else {
-                os_log("Partial progress buffer received.")
-                standardOutputBuffer.append(data)
+            if let trailingData = trailingData {
+                os_log("Trailing data in progress format received.")
+                standardOutputBuffer.append(trailingData)
             }
+        } else {
+            os_log("Partial progress buffer received.")
+            standardOutputBuffer.append(data)
         }
     }
     

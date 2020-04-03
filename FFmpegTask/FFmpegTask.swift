@@ -18,9 +18,24 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 // This class is a non-thread safe singleton - be careful!
 public class FFmpegTask {
     
+    public enum ExitCodes : Int32 {
+        case Success = 0
+        case Failure = 1
+        case InsufficientArguments = 2
+        case InvalidArguments = 3
+        case UnknownCommand = 4
+        
+        init (_ i: Int32) {
+            self.init(rawValue: min(0, max(3, i)))!
+        }
+        
+        var code: Int32 {
+            return self.rawValue
+        }
+    }
+    
     // Singleton - do not access this class in any other way.
     public static let Application = FFmpegTask()
-    internal let mutex = MutexSynchronized()
 
     // Flags for running processes
     private static let ValidRequests = ["-ffmpeg", "-ffprobe", "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
@@ -33,27 +48,19 @@ public class FFmpegTask {
                                        /* Disable non complex filters */ "-filter", "-vf", "-af"]
     
     // Null terminator for calling main(argc, argv)
-    //private static let NullTerminator = [UnsafeMutablePointer<Int8>(0)]
-    private static let NewlineMarker = Data(bytes: [0x0A], count: 1)
     private static var NullTerminator = [UnsafeMutablePointer<Int8>.allocate(capacity: 1)]
     
     private let defaultStandardOutputPipe = Pipe()
     private let proxyStandardOutputPipe = Pipe()
     private let defaultStandardErrorPipe = Pipe()
     private let proxyStandardErrorPipe = Pipe()
-    
-    private var standardOutputBuffer = Data(capacity: 4096)
-    private var outputHandlerType: FFmpegOutputHandler.Type?
-    private let progressHandler: ProgressHandler
         
+    private var stdOutConnector: PipeConnector?
+    private var stdErrConnector: PipeConnector?
     
-    private func registerOutputHandler(handler: FFmpegOutputHandler.Type) {
-        precondition(outputHandlerType == nil, "There is already an output handler registered.")
+    private let progressPipe = Pipe()
+    private var progressConnector: PipeConnector?
         
-        outputHandlerType = handler
-        proxyStandardOutputPipe.fileHandleForReading.readabilityHandler = appendProxyStandardOutputToBuffer
-    }
-    
     
     // Prepare the environment for calling the ffmpeg libraries
     private init() {
@@ -61,190 +68,121 @@ public class FFmpegTask {
         unsetenv("AV_LOG_FORCE_COLOR")
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
         
-        // Prepare the progress processor - this should be moved only to the one call to ffmpeg
-        progressHandler = ProgressHandler(defaultStdErr: defaultStandardErrorPipe.fileHandleForWriting)
-        
         // Copy the current std to the default std pipe for holding
         dup2(FileHandle.standardOutput.fileDescriptor, defaultStandardOutputPipe.fileHandleForWriting.fileDescriptor)
         dup2(FileHandle.standardError.fileDescriptor, defaultStandardErrorPipe.fileHandleForWriting.fileDescriptor)
         
-        // Reset std to the proxy std pipe to allow intercepting and redirect to processor and enable line buffering
+        // Reset std to the proxy std pipe to allow intercepting and redirect to processor
         dup2(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardOutput.fileDescriptor)
         setlinebuf(fdopen(proxyStandardOutputPipe.fileHandleForWriting.fileDescriptor, "w"))
         
         dup2(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, FileHandle.standardError.fileDescriptor)
-        proxyStandardErrorPipe.fileHandleForReading.readabilityHandler = flushProxyStandardError
         setlinebuf(fdopen(proxyStandardErrorPipe.fileHandleForWriting.fileDescriptor, "w"))
         
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
         dup2(FileHandle.nullDevice.fileDescriptor, FileHandle.standardInput.fileDescriptor)
         
         // Prepare the exit handler to ensure that the above handles are all flushed and finished
-        // In order for the C function closure to work, variables must be static, therefore this
-        // is a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits from
-        // a billion places.
+        // In order for the C function closure to work, variables must be static, therefore this is
+        // a 1:1 with the static "Application" singleton. This is needed as ffmpeg exits everywhere.
         //
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
+
         atexit {
-            // Close stdout and stderr and process any pending data
-            FFmpegTask.Application.mutex.synchronize {
-                FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForWriting.closeFile()
-                FileHandle.standardError.closeFile()
-                FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForWriting.closeFile()
-                FileHandle.standardOutput.closeFile()
-                
-                FFmpegTask.Application.flushProxyStandardError(fileHandle: FFmpegTask.Application.proxyStandardErrorPipe.fileHandleForReading)
-                FFmpegTask.Application.flushProxyStandardOutput(fileHandle: FFmpegTask.Application.proxyStandardOutputPipe.fileHandleForReading)
-
-                FFmpegTask.Application.progressHandler.processLastProgress()
+            if let stdOutConnector = FFmpegTask.Application.stdOutConnector {
+                stdOutConnector.close()
             }
-        }
-    }
-    
-    // Output an error message in json format "{type:error,description:message}" escaping slashes and quotes
-    private func printError(_ message: String) {
-        let escapedMessage = message.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")  // TODO: Enumerate and append to a buffer
-        let jsonError = "{\"type\":\"error\",\"description\":\"\(escapedMessage)\"}"
-        
-        guard let jsonData = jsonError.data(using: .utf8) else {
-            fatalError("Unable to output json object.")
-        }
-        
-        defaultStandardErrorPipe.fileHandleForWriting.write(jsonData)
-        defaultStandardErrorPipe.fileHandleForWriting.write(FFmpegTask.NewlineMarker)
-        defaultStandardErrorPipe.fileHandleForWriting.synchronizeFile()
-    }
-    
-    // Output an error message in json format "{type:error,description:message}"
-    // This method is a bit different in that it prints each processed error separately
-    private func flushProxyStandardError(fileHandle: FileHandle) {
-        mutex.synchronize {
-            let data = fileHandle.availableData
-            if !data.isEmpty, let error = FFmpegError(from: data) {
-                error.errors.forEach { error in
-                    if let jsonData = error.toJSONData() {
-                        defaultStandardErrorPipe.fileHandleForWriting.write(jsonData)
-                        defaultStandardErrorPipe.fileHandleForWriting.write(FFmpegTask.NewlineMarker)
-                        defaultStandardErrorPipe.fileHandleForWriting.synchronizeFile()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func appendProxyStandardOutputToBuffer(fileHandle: FileHandle) {
-        mutex.synchronize {
-            standardOutputBuffer.append(fileHandle.availableData)
-        }
-    }
-
-    private func flushProxyStandardOutput(fileHandle: FileHandle) {
-        mutex.synchronize {
-            standardOutputBuffer.append(fileHandle.availableData)
             
-            if !standardOutputBuffer.isEmpty, let outputHandlerType = outputHandlerType {
-                guard let outputHandler = outputHandlerType.init(from: standardOutputBuffer), let jsonData = outputHandler.toJSONData() else {
-                    os_log("Invalid ffmpeg output; unexpected format", type: OSLogType.error)
-                    return
-                }
-
-                defaultStandardOutputPipe.fileHandleForWriting.write(jsonData)
-                defaultStandardOutputPipe.fileHandleForWriting.write(FFmpegTask.NewlineMarker)
-                defaultStandardOutputPipe.fileHandleForWriting.synchronizeFile()
+            if let progressConnector = FFmpegTask.Application.progressConnector {
+                progressConnector.close()
+            }
+            
+            if let stdErrConnector = FFmpegTask.Application.stdErrConnector {
+                stdErrConnector.close()
             }
         }
     }
-  
-    private func invokeFFmpeg(argument: String) -> Int32 {
-        return invokeFFmpeg(arguments: [argument])
+
+    private func invokeFFmpeg(argument: String, handler: FFmpegOutputHandler.Type? = nil) -> ExitCodes {
+        return invokeFFmpeg(arguments: [argument], handler: handler)
     }
     
-    private func invokeFFmpeg(arguments: [String]) -> Int32 {
-        let args = [CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags + arguments
+    private func invokeFFmpeg(arguments: [String], handler: FFmpegOutputHandler.Type? = nil) -> ExitCodes {
+        stdOutConnector = PipeConnector(read: proxyStandardOutputPipe, write: defaultStandardOutputPipe, flush: FileHandle.standardOutput, relayMode: .end, outputHandlerType: handler)
+        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe, write: defaultStandardErrorPipe, flush: FileHandle.standardError, relayMode: .line, outputHandlerType: FFmpegError.self)
+
+        progressConnector = PipeConnector(read: progressPipe, write: defaultStandardErrorPipe, relayMode: .terminators, outputHandlerType: FFmpegProgress.self)
+
+        let args = [CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags +
+            ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"] + arguments
         var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
-        return ffmpeg(Int32(cargs.count - 1), &cargs)  // Minus null terminator
+        return ExitCodes(ffmpeg(Int32(cargs.count - 1), &cargs))  // Minus null terminator
     }
         
-    private func invokeFFprobe(argument: String) -> Int32 {
-        return invokeFFprobe(arguments: [argument])
-    }
-    
-    private func invokeFFprobe(arguments: [String]) -> Int32 {
+    private func invokeFFprobe(arguments: [String]) -> ExitCodes {
+        stdOutConnector = PipeConnector(read: proxyStandardOutputPipe, write: defaultStandardOutputPipe, flush: FileHandle.standardOutput, relayMode: .end)  // Passthrough all output from ffprobe untouched
+        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe, write: defaultStandardErrorPipe, flush: FileHandle.standardError, relayMode: .line, outputHandlerType: FFmpegError.self)
+
         let args = [CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments
         var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
-        return ffprobe(Int32(cargs.count - 1), &cargs)  // Minus null terminator
+        return ExitCodes(ffprobe(Int32(cargs.count - 1), &cargs))  // Minus null terminator
     }
         
-    public func processRequest(_ arguments: [String]) -> Int32 {
+    public func processRequest(_ arguments: [String]) -> ExitCodes {
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't fail
         if arguments.count <= 1 {
-            printError("Insufficent arguments")
-            return EXIT_FAILURE
+            return ExitCodes.InsufficientArguments
         }
         
         // Retrieve the request type and validate against request list
         let request = arguments[1]
         if !FFmpegTask.ValidRequests.contains(request) {
-            printError("No valid request provided. Must be one of \(FFmpegTask.ValidRequests)")
-            return EXIT_FAILURE
+            return ExitCodes.UnknownCommand
         }
         
         
         // Check the request to determine what service to call
         switch request {
         case "-license":
-            registerOutputHandler(handler: FFmpegLicense.self)
-            return invokeFFmpeg(argument: "-L")
+            return invokeFFmpeg(argument: "-L", handler: FFmpegLicense.self)
             
         case "-version":
-            registerOutputHandler(handler: FFmpegVersion.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegVersion.self)
             
         case "-protocols":
-            registerOutputHandler(handler: FFmpegProtocols.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegProtocols.self)
             
         case "-formats", "-muxers", "-demuxers", "-devices":
-            registerOutputHandler(handler: FFmpegFormats.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegFormats.self)
         
         case "-bsfs":
-            registerOutputHandler(handler: FFmpegBitstreamFilters.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegBitstreamFilters.self)
             
         case "-codecs":
-            registerOutputHandler(handler: FFmpegCodecs.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegCodecs.self)
             
         case "-decoders":
-            registerOutputHandler(handler: FFmpegDecoders.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegDecoders.self)
             
         case "-sample_fmts":
-            registerOutputHandler(handler: FFmpegSampleFormats.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegSampleFormats.self)
             
         case "-colors":
-            registerOutputHandler(handler: FFmpegColors.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegColors.self)
             
         case "-pix_fmts":
-            registerOutputHandler(handler: FFmpegPixelFormats.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegPixelFormats.self)
             
         case "-layouts":
-            registerOutputHandler(handler: FFmpegLayouts.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegLayouts.self)
             
         case "-filters":
-            registerOutputHandler(handler: FFmpegFilters.self)
-            return invokeFFmpeg(argument: request)
+            return invokeFFmpeg(argument: request, handler: FFmpegFilters.self)
             
         default:
             // Ensure we have sufficient arguments for ffmpeg and ffprobe
             if arguments.count <= 2 {
-                printError("Insufficent arguments")
-                return EXIT_FAILURE
+                return ExitCodes.InsufficientArguments
             }
             
             // Create an array of strings with arguments minus the application and request
@@ -253,22 +191,18 @@ public class FFmpegTask {
             // Check arguments and fail if an invalid flag is passed - rudimentary but it works
             let invalidFlags = newArguments.filter({ FFmpegTask.InvalidFlags.contains($0) })
             if !invalidFlags.isEmpty {
-                printError("Invalid arguments for request \"\(request)\": \(invalidFlags)")
-                return EXIT_FAILURE
+                return ExitCodes.InvalidArguments
             }
             
             // Check the request to determine what service to call
             if request == "-ffmpeg" {
-                registerOutputHandler(handler: FFmpegPassthrough.self)
-                return invokeFFmpeg(arguments: ["-progress", "pipe:\(progressHandler.fileDescriptor)"] + newArguments)
+                return invokeFFmpeg(arguments: newArguments)
                 
             } else if request == "-ffprobe" {
-                registerOutputHandler(handler: FFmpegPassthrough.self)
                 return invokeFFprobe(arguments: newArguments)
             }
         }
-        
-        printError("Inavlid arguments")
-        return EXIT_FAILURE
+
+        return ExitCodes.UnknownCommand
     }
 }

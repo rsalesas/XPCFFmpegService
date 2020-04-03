@@ -25,19 +25,19 @@ class MatchRegularExpression {
         }
         
         public func count(of: Int) -> Int {
-            precondition(of < matches.count, "Index out of range")
+            precondition(of >= 0 && of < matches.count, "Index out of range")
             return matches[of].numberOfRanges
         }
         
         public func contains(index: Int, group: String) -> Bool {
-            precondition(index < matches.count, "Index out of range")
+            precondition(index >= 0 && index < matches.count, "Index out of range")
             let range = Range(matches[index].range(withName: group), in: output)
             return range != nil
         }
         
         public subscript(index: Int, group: String) -> String {
             get {
-                precondition(index < matches.count, "Index out of range")
+                precondition(index >= 0 && index < matches.count, "Index out of range")
                 guard let range = Range(matches[index].range(withName: group), in: output) else {
                     fatalError("Group name does not exist")
                 }
@@ -48,7 +48,7 @@ class MatchRegularExpression {
             
         public subscript(index: Int, at: Int) -> String {
             get {
-                precondition(index < matches.count, "Index out of range")
+                precondition(index >= 0 && index < matches.count, "Index out of range")
                 guard let range = Range(matches[index].range(at: at), in: output) else {
                     fatalError("Index out of range")
                 }
@@ -91,6 +91,7 @@ class MatchRegularExpression {
 
     init?(in data: Data, pattern: String, options: NSRegularExpression.Options = [], matchingOptions: NSRegularExpression.MatchingOptions = []) {
         guard let output = String(data: data, encoding: .utf8), let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
+            print("test2")
             return nil
         }
         

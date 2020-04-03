@@ -13,5 +13,13 @@
 import Foundation
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
+/*
+    Error Codes Returned:
+        0:  Success
+        1:  General failure
+        2:  Insufficient arguments
+        3:  Invalid arguments
+        4:  Unknown command
+ */
 
-exit(FFmpegTask.Application.processRequest(CommandLine.arguments))
+exit(FFmpegTask.Application.processRequest(CommandLine.arguments).code)

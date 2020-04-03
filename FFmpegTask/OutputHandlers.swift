@@ -9,84 +9,192 @@
 
 
 import Foundation
+import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
 protocol FFmpegOutputHandler: Encodable {
+    var JSON: Data { get }
     init?(from: Data)
-    
-    func toJSONData() -> Data?
+}
+
+protocol FFmpegOutputHandlerWithTerminators: FFmpegOutputHandler {
+    static var terminators: [Data] { get }
 }
 
 extension FFmpegOutputHandler {
     
-    func toJSONData() -> Data? {
+    var JSON: Data {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes] //, .sortedKeys, .prettyPrinted]
+        
+        #if DEBUG
+            encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys, .prettyPrinted]
+        #else
+            encoder.outputFormatting = [.withoutEscapingSlashes]
+        #endif
+        
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        
-        return try? encoder.encode(self)
+        return (try? encoder.encode(self)) ?? Data(capacity: 0)
     }
 }
 
-
-struct FFmpegPassthrough: FFmpegOutputHandler {
-    public let data: Data
-
+struct FFmpegError: FFmpegOutputHandler {
     
-    init?(from: Data) {
-        data = from
-    }
-    
-    func toJSONData() -> Data? {
-        return data
-    }
-}
-
-
-struct FFmpegError {
-    private static let RegExPattern = #"(?:^.*\[(?<Type>(?:info)|(?:error)|(?:warning))\]\s(?:\:\s)*(?<Description>.*?)\s*$)|(?:^(?<Unknown>.*)$)"#
-
     struct Error: Encodable {
-        public let type: String
-        public let description: String
         
-        func toJSONData() -> Data?{
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.withoutEscapingSlashes] //, .sortedKeys, .prettyPrinted]
-            encoder.keyEncodingStrategy = .convertToSnakeCase
-            
-            return try? encoder.encode(self)
+        enum ErrorType: String, Encodable {
+            case unkown
+            case os_log
+            case quiet
+            case panic
+            case fatal
+            case error
+            case warning
+            case info
+            case verbose
+            case debug
+            case trace
         }
-    }
-    
-    public let errors: [Error]
         
+        public let type: ErrorType
+        public let description: String
+        public let indent: Int
+    }
 
+    private static let RegExPattern = #"(?:^.*\[(?<Type>(?:info)|(?:error)|(?:warning))\]\s(?<Indent>\s*)(?:\:\s)*(?<Description>.*?)\s*$)|(?:^(?<oslog>(?<oslogtimestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{6}\+\d{4})(?:\s)(?<oslogprocess>\S*)\s(?<oslogmessage>.*))$)|(?:^(?<Unknown>.*)$)"#
+
+    /*
+     
+     Example:
+     
+        For ffmpeg errors with a prefix:
+     
+            [error] /Users/robert/Git/XPCFFmpegService/../Test/Test1.mp4: No such file or directory
+     
+        or for os_log (caught as "oslog"):
+     
+            2020-04-03 13:59:08.858260+0800 FFmpegTask[16639:6410797] Test
+     
+        or for unknown (caught as "Unknown"):
+     
+            Anything that we don't understand
+     
+     
+     Possible ffmpeg prefix values:
+     
+         ‘quiet, -8’        Show nothing at all; be silent.
+
+         ‘panic, 0’         Only show fatal errors which could lead the process to crash, such as an assertion failure. This is not currently used for anything.
+
+         ‘fatal, 8’         Only show fatal errors. These are errors after which the process absolutely cannot continue.
+
+         ‘error, 16’        Show all errors, including ones which can be recovered from.
+
+         ‘warning, 24’      Show all warnings and errors. Any message related to possibly incorrect or unexpected events will be shown.
+
+         ‘info, 32’         Show informative messages during processing. This is in addition to warnings and errors. This is the default value.
+
+         ‘verbose, 40’      Same as info, except more verbose.
+
+         ‘debug, 48’        Show everything, including debugging information.
+
+         ‘trace, 56’        ?
+     
+     */
+    
+    public let error: FFmpegError.Error
+    
     init?(from: Data) {
         guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegError.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
             os_log("Invalid ffmpeg error output; unexpected format", type: OSLogType.error)
             return nil
         }
         
-        var errors: [Error] = []
-        
-        for index in 0...matchRegEx.matches.count - 1 {
-            if matchRegEx.matches.contains(index: index, group: "Unknown") {
-                let description = matchRegEx.matches[index, "Unknown"]
-                
-                errors.append(Error(type: "info", description: description))
-                
-            } else {
-                let type = matchRegEx.matches[index, "Type"]
-                let description = matchRegEx.matches[index, "Description"]
-                    
-                errors.append(Error(type: type, description: description))
+        // First check for an "unknown" error, such as os_log, then for a known one
+        if matchRegEx.matches.contains(index: 0, group: "Unknown") {
+            let unknown = matchRegEx.matches[0, "Unknown"]
+            error = FFmpegError.Error(type: .unkown, description: unknown, indent: 0)
+            
+        } else if matchRegEx.matches.contains(index: 0, group: "oslog") {
+            // TODO: Currently not using oslogtimestamp, oslogprocess, and oslogmessage
+            // These could be extracted to return a different type of structure for debugging
+            let os_log = matchRegEx.matches[0, "oslog"]
+            error = FFmpegError.Error(type: .os_log, description: os_log, indent: 0)
+            
+        } else {
+            guard let type = Error.ErrorType(rawValue: matchRegEx.matches[0, "Type"]) else {
+                os_log("Unknown error type in ffmpeg error output; unexpected label \"%@\"", type: OSLogType.error, matchRegEx.matches[0, "Type"])
+                return nil
             }
+
+            let description = matchRegEx.matches[0, "Description"]
+            let indent = matchRegEx.matches[0, "Indent"].count
+
+            error = FFmpegError.Error(type: type, description: description, indent: indent)
+        }
+    }
+    
+}
+
+
+struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
+    
+    private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
+
+    var frame: Int
+    var fps: Double
+    var input: Int
+    var stream: Int
+    var quality: Double
+    var bitrate: Double?
+    var totalSize: Int?
+    var outTime: TimeInterval?
+    var duplicateFrames: Int
+    var droppedFrames: Int
+    var speed: Int?
+    var finished: Bool
+
+    static var terminators: [Data]  {
+        get {
+            return ["continue\n".data(using: .utf8)!, "end\n".data(using: .utf8)!]
+        }
+    }
+    
+    init?(from: Data) {
+        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegProgress.RegExPattern, options: []), matchRegEx.matches.count >= 1 else {
+            os_log("Invalid ffmpeg progress output; unexpected format", type: OSLogType.error)
+            return nil
         }
         
-        self.errors = errors
+        // The following must be included and convert properly
+        guard let frame = Int(matchRegEx.matches[0, "Frame"]), let fps = Double(matchRegEx.matches[0, "Fps"]),
+            let input = Int(matchRegEx.matches[0, "Input"]), let stream = Int(matchRegEx.matches[0, "Stream"]),
+            let quality = Double(matchRegEx.matches[0, "Quality"]), let duplicateFrames = Int(matchRegEx.matches[0, "DuplicateFrames"]),
+            let droppedFrames = Int(matchRegEx.matches[0, "DroppedFrames"])
+             else {
+            fatalError("Invalid ffmpeg progress output; unexpected format")
+        }
+        
+        // The following must be included but could convert to "N/A" in which case we leave them nil
+        let bitrate = Double(matchRegEx.matches[0, "Bitrate"])
+        let totalSize = Int(matchRegEx.matches[0, "TotalSize"])
+        let ms = TimeInterval(matchRegEx.matches[0, "OutTime"])
+        let speed = Int(matchRegEx.matches[0, "Speed"])
+        
+        self.frame = frame
+        self.fps = fps
+        self.input = input
+        self.stream = stream
+        self.quality = quality
+        self.bitrate = bitrate
+        self.totalSize = totalSize
+        self.outTime = ms == nil ? nil : ms! / 1000000.0
+        self.duplicateFrames = duplicateFrames
+        self.droppedFrames = droppedFrames
+        self.speed = speed
+        self.finished = matchRegEx.matches[0, "Progress"] == "end"
     }
+    
 }
 
 
@@ -107,14 +215,14 @@ struct FFmpegCodecs: FFmpegOutputHandler {
      */
     
     enum Support : String, Encodable {
-        case decoding = "Decoding"
-        case encoding = "Encoding"
-        case videoCodec = "VideoCodec"
-        case audioCodec = "AudioCodec"
-        case subtitleCodec = "SubtitleCodec"
-        case intraFrameOnlyCodec = "IntraFrameOnlyCodec"
-        case lossyCompression = "LossyCompression"
-        case losslessCompression = "LosslessCompression"
+        case decoding
+        case encoding
+        case videoCodec
+        case audioCodec
+        case subtitleCodec
+        case intraFrameOnlyCodec
+        case lossyCompression
+        case losslessCompression
     }
 
     struct Codec: Encodable {
@@ -222,14 +330,14 @@ struct FFmpegDecoders: FFmpegOutputHandler {
      */
     
     enum Support : String, Encodable {
-        case video = "Video"
-        case audio = "Audio"
-        case subtitle = "Subtitle"
-        case frameLevelMultithreading = "FrameLevelMultithreading"
-        case sliceLevelMultithreading = "SliceLevelMultithreading"
-        case experimentalCodec = "ExperimentalCodec"
-        case drawHorizontalBandSupported = "DrawHorizontalBandSupported"
-        case directRenderingMethod1Supported = "DirectRenderingMethod1Supported"
+        case video
+        case audio
+        case subtitle
+        case frameLevelMultithreading
+        case sliceLevelMultithreading
+        case experimentalCodec
+        case drawHorizontalBandSupported
+        case directRenderingMethod1Supported
     }
 
     struct Decoder: Encodable {
@@ -281,9 +389,9 @@ struct FFmpegFilters: FFmpegOutputHandler {
      */
     
     enum Support : String, Encodable {
-        case timeline = "Timeline"
-        case slice = "Slice"
-        case command = "Command"
+        case timeline
+        case slice
+        case command
     }
     
     struct Filter: Encodable {
@@ -323,8 +431,8 @@ struct FFmpegFormats: FFmpegOutputHandler {
     private static let RegExPattern = #"^\s{1,2}(?<Support>[DE\s]{2})\s+(?<Format>\S+)\s+(?<Description>.+)$"#  // -formats, -demuxers, -muxers, -devices
     
     enum Support : String, Encodable {
-        case muxing = "Muxing"
-        case demuxing = "Demuxing"
+        case muxing
+        case demuxing
     }
     
     struct Format: Encodable {
@@ -436,11 +544,11 @@ struct FFmpegPixelFormats: FFmpegOutputHandler {
      */
     
     enum Support : String, Encodable {
-        case input = "Input"
-        case output = "Output"
-        case hardwareAccelerated = "HardwareAccelerated"
-        case paletted = "Paletted"
-        case bitstream = "Bitstream"
+        case input
+        case output
+        case hardwareAccelerated
+        case paletted
+        case bitstream
     }
     
     struct PixelFormat: Encodable {
