@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1134D6C23C09F4D00614692 /* ProgressHandler.swift */; };
 		E12513FE2416B02800F0BEAF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FD2416B02800F0BEAF /* main.swift */; };
 		E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */; };
 		E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125140D2416B4A600F0BEAF /* AppDelegate.swift */; };
@@ -16,7 +15,6 @@
 		E12514152416B4A800F0BEAF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514142416B4A800F0BEAF /* Preview Assets.xcassets */; };
 		E12514182416B4A800F0BEAF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E12514162416B4A800F0BEAF /* Main.storyboard */; };
 		E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		E152C5842427E20800442297 /* PipeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E152C5822427E1E300442297 /* PipeReader.swift */; };
 		E157273B241A991600D23341 /* FFmpegTask in Embed FFmpegTask */ = {isa = PBXBuildFile; fileRef = E1B640D9238A8B28006F6502 /* FFmpegTask */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
@@ -25,6 +23,7 @@
 		E15CE41A24169A300067782A /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41424169A2F0067782A /* cmdutils.c */; };
 		E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */; };
 		E1636B7023BFAD4800CFA5A4 /* OutputHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */; };
+		E167783F243C57E3001AC285 /* FFmpegTaskProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */; };
 		E16FDBDF24236F2C00EDF30A /* PipeConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16FDBDC24235BF400EDF30A /* PipeConnector.swift */; };
 		E1954B98243461EB00F50889 /* NSException in Frameworks */ = {isa = PBXBuildFile; productRef = E1954B97243461EB00F50889 /* NSException */; };
 		E1954BAE2435B34600F50889 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E1954BAD2435B34600F50889 /* SiliconInk.Helper */; };
@@ -142,7 +141,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E1134D6C23C09F4D00614692 /* ProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHandler.swift; sourceTree = "<group>"; };
 		E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = XPCFFmpegService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegService.swift; sourceTree = "<group>"; };
 		E12513FD2416B02800F0BEAF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -165,7 +163,6 @@
 		E14F63982387958C006C7AA5 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../FFmpeg/lib/libavcodec.a; sourceTree = "<group>"; };
 		E14F63992387958C006C7AA5 /* libpostproc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpostproc.a; path = ../FFmpeg/lib/libpostproc.a; sourceTree = "<group>"; };
 		E14F639A2387958C006C7AA5 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../FFmpeg/lib/libavutil.a; sourceTree = "<group>"; };
-		E152C5822427E1E300442297 /* PipeReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PipeReader.swift; sourceTree = "<group>"; };
 		E15CE40E24169A2F0067782A /* ffmpeg_opt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_opt.c; path = FFmpeg/fftools/ffmpeg_opt.c; sourceTree = SOURCE_ROOT; };
 		E15CE41024169A2F0067782A /* cmdutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmdutils.h; path = FFmpeg/fftools/cmdutils.h; sourceTree = SOURCE_ROOT; };
 		E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ffmpeg_videotoolbox.c; path = FFmpeg/fftools/ffmpeg_videotoolbox.c; sourceTree = SOURCE_ROOT; };
@@ -175,6 +172,7 @@
 		E15CE41B24169EFE0067782A /* ffmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ffmpeg.h; path = FFmpeg/fftools/ffmpeg.h; sourceTree = SOURCE_ROOT; };
 		E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MatchRegularExpression.swift; sourceTree = "<group>"; };
 		E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputHandlers.swift; sourceTree = "<group>"; };
+		E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegTaskProcess.swift; sourceTree = "<group>"; };
 		E16FDBDC24235BF400EDF30A /* PipeConnector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PipeConnector.swift; sourceTree = "<group>"; };
 		E192A7BA237E5E080026A4D9 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ../../../../usr/local/lib/libx264.a; sourceTree = SOURCE_ROOT; };
 		E192A7BB237E5E080026A4D9 /* libx265.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx265.a; path = ../../../../usr/local/lib/libx265.a; sourceTree = SOURCE_ROOT; };
@@ -255,7 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */,
-				E152C5822427E1E300442297 /* PipeReader.swift */,
+				E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */,
 				E12513FD2416B02800F0BEAF /* main.swift */,
 				E12513FF2416B02800F0BEAF /* Info.plist */,
 			);
@@ -294,7 +292,6 @@
 				E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */,
 				E1636B6F23BFAD4800CFA5A4 /* OutputHandlers.swift */,
 				E16FDBDC24235BF400EDF30A /* PipeConnector.swift */,
-				E1134D6C23C09F4D00614692 /* ProgressHandler.swift */,
 				E1636B4A23B9BC4500CFA5A4 /* MatchRegularExpression.swift */,
 			);
 			path = FFmpegTask;
@@ -533,8 +530,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E152C5842427E20800442297 /* PipeReader.swift in Sources */,
 				E12513FE2416B02800F0BEAF /* main.swift in Sources */,
+				E167783F243C57E3001AC285 /* FFmpegTaskProcess.swift in Sources */,
 				E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -562,7 +559,6 @@
 				E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */,
 				E15CE41924169A300067782A /* ffmpeg_filter.c in Sources */,
 				E15CE41A24169A300067782A /* cmdutils.c in Sources */,
-				E1134D6D23C09F4D00614692 /* ProgressHandler.swift in Sources */,
 				E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */,
 				E1636B4B23B9BC4500CFA5A4 /* MatchRegularExpression.swift in Sources */,
 				E1B640DC238A8B28006F6502 /* main.swift in Sources */,
@@ -901,7 +897,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rsalesas/SiliconInk.Helper.git";
 			requirement = {
-				branch = master;
+				branch = Feature;
 				kind = branch;
 			};
 		};

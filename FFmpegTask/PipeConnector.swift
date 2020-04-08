@@ -40,7 +40,7 @@ class PipeConnector {
     public let readPipe: Pipe
     public let writePipe: Pipe
 
-    // Add support for multiple buffers to match, for example in progress the two end of package markers
+
     init(read: Pipe, write: Pipe, flush: FileHandle? = nil, relayMode: RelayMode, outputHandlerType: FFmpegOutputHandler.Type? = nil) {
         
         self.readPipe = read
@@ -60,7 +60,7 @@ class PipeConnector {
     
     public func close() {
         mutex.synchronize {
-            readPipe.fileHandleForWriting.closeFile()  // ? Flush instead?
+            readPipe.fileHandleForWriting.closeFile()
             flushHandle?.closeFile()
             
             let availableData = self.readPipe.fileHandleForReading.availableData

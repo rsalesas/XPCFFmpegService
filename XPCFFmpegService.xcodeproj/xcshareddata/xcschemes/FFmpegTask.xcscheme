@@ -73,15 +73,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_entries format=size"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-version"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_entries"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = ""
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-codecs"

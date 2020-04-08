@@ -46,10 +46,7 @@ public class FFmpegTask {
                                        "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
                                        "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters",
                                        /* Disable non complex filters */ "-filter", "-vf", "-af"]
-    
-    // Null terminator for calling main(argc, argv)
-    private static var NullTerminator = [UnsafeMutablePointer<Int8>.allocate(capacity: 1)]
-    
+        
     private let defaultStandardOutputPipe = Pipe()
     private let proxyStandardOutputPipe = Pipe()
     private let defaultStandardErrorPipe = Pipe()
@@ -113,19 +110,17 @@ public class FFmpegTask {
 
         progressConnector = PipeConnector(read: progressPipe, write: defaultStandardErrorPipe, relayMode: .terminators, outputHandlerType: FFmpegProgress.self)
 
-        let args = [CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags +
-            ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"] + arguments
-        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
-        return ExitCodes(ffmpeg(Int32(cargs.count - 1), &cargs))  // Minus null terminator
+        let cargs = CStringArray([CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags +
+            ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"] + arguments)
+        return ExitCodes(ffmpeg(Int32(cargs.count), cargs.pointer))
     }
         
     private func invokeFFprobe(arguments: [String]) -> ExitCodes {
         stdOutConnector = PipeConnector(read: proxyStandardOutputPipe, write: defaultStandardOutputPipe, flush: FileHandle.standardOutput, relayMode: .end)  // Passthrough all output from ffprobe untouched
         stdErrConnector = PipeConnector(read: proxyStandardErrorPipe, write: defaultStandardErrorPipe, flush: FileHandle.standardError, relayMode: .line, outputHandlerType: FFmpegError.self)
 
-        let args = [CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments
-        var cargs = args.map { strdup($0) } + FFmpegTask.NullTerminator  // TODO: Look at String.utf8CString
-        return ExitCodes(ffprobe(Int32(cargs.count - 1), &cargs))  // Minus null terminator
+        let cargs = CStringArray([CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments)
+        return ExitCodes(ffprobe(Int32(cargs.count), cargs.pointer))
     }
         
     public func processRequest(_ arguments: [String]) -> ExitCodes {
