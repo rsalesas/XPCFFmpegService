@@ -45,7 +45,7 @@ struct ContentView: View {
             Button(action: { self.myService.makeUppperCaseString(string: self.string, contentView: self) }) {
                 Text("Make Uppercase")
             }
-            Button(action: { self.string = "Hello World!" }) {
+            Button(action: { self.string = "-version" }) {
                 Text("Reset")
             }
         }

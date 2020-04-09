@@ -36,16 +36,14 @@ class PipeConnector {
         }
     }
         
-    public let flushHandle: FileHandle?
-    public let readPipe: Pipe
-    public let writePipe: Pipe
+    public let readFh: FileHandle
+    public let writeFh: FileHandle
 
 
-    init(read: Pipe, write: Pipe, flush: FileHandle? = nil, relayMode: RelayMode, outputHandlerType: FFmpegOutputHandler.Type? = nil) {
+    init(read: FileHandle, write: FileHandle, relayMode: RelayMode, outputHandlerType: FFmpegOutputHandler.Type? = nil) {
         
-        self.readPipe = read
-        self.writePipe = write
-        self.flushHandle = flush
+        self.readFh = read
+        self.writeFh = write
         self.outputHandlerType = outputHandlerType
         self.relayMode = relayMode
         
@@ -55,16 +53,17 @@ class PipeConnector {
             self.terminators = []
         }
         
-        self.readPipe.fileHandleForReading.readabilityHandler = self.readabilityHandler
+        self.readFh.readabilityHandler = self.readabilityHandler
     }
     
-    public func close() {
+    public func flush() {
         mutex.synchronize {
-            readPipe.fileHandleForWriting.closeFile()
-            flushHandle?.closeFile()
+            self.readFh.readabilityHandler = nil
             
-            let availableData = self.readPipe.fileHandleForReading.availableData
-            appendAvailableDataToBuffer(data: availableData)
+            if let availableData = readFh.availableData(timeout: 0) {
+                appendAvailableDataToBuffer(data: availableData)
+            }
+            
             write(data: buffer)
         }
     }
@@ -76,20 +75,23 @@ class PipeConnector {
                     return
                 }
         
-                writePipe.fileHandleForWriting.write(outputHandler.JSON)
-                writePipe.fileHandleForWriting.synchronizeFile()
+                writeFh.write(outputHandler.JSON)
                 
             } else {
-                writePipe.fileHandleForWriting.write(buffer)
-                writePipe.fileHandleForWriting.synchronizeFile()
+                writeFh.write(buffer)
             }
         }
     }
 
     private func readabilityHandler(fileHandle: FileHandle) {
         mutex.synchronize {
-            let availableData = fileHandle.availableData
-            appendAvailableDataToBuffer(data: availableData)
+            if let availableData = readFh.availableData(timeout: 0) {
+                if availableData.isEmpty {
+                    self.readFh.readabilityHandler = nil
+                } else {
+                    appendAvailableDataToBuffer(data: availableData)
+                }
+            }
         }
     }
     
@@ -112,9 +114,9 @@ class PipeConnector {
             } else if relayMode == .terminators && terminators.count > 0 {
                 terminators.forEach { match in
                     while let range = buffer.range(of: match) {
-                        let line = buffer.subdata(in: buffer.startIndex..<range.upperBound)
+                        let data = buffer.subdata(in: buffer.startIndex..<range.upperBound)
                         buffer.removeSubrange(buffer.startIndex..<range.upperBound)
-                        write(data: line)
+                        write(data: data)
                     }
                 }
             }

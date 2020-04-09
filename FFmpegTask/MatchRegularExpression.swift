@@ -91,7 +91,6 @@ class MatchRegularExpression {
 
     init?(in data: Data, pattern: String, options: NSRegularExpression.Options = [], matchingOptions: NSRegularExpression.MatchingOptions = []) {
         guard let output = String(data: data, encoding: .utf8), let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
-            print("test2")
             return nil
         }
         
