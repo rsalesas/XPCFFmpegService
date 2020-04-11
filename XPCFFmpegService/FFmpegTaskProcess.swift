@@ -10,27 +10,16 @@ import Foundation
 import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
+public struct JSONError: Codable {
+    let error: FFmpegStatus
+}
+
 
 class FFmpegTaskProcess {
     
-    typealias CompletionHandler = (_ response: Data?, _ log: Data?, _ error: Error?) -> Void
-    
-    public enum ExitCode : Int32 {
-        case Success = 0
-        case Failure = 1
-        case InsufficientArguments = 2
-        case InvalidArguments = 3
-        case UnknownCommand = 4
-        
-        init (_ i: Int32) {
-           self.init(rawValue: min(0, max(4, i)))!
-        }
-        
-        var code: Int32 {
-            return self.rawValue
-        }
-    }
+    public typealias CompletionHandler = (_ result: ServiceResult) -> Void
 
+        
     private let mutex = MutexSynchronized()
     private let process = Process()
     private let handler: CompletionHandler
@@ -57,8 +46,14 @@ class FFmpegTaskProcess {
 
             os_log("  FFmpegTaskProcess.stdOutReadabilityHandler (%d)", availableData.count)
             stdOutValidator.append(data: availableData)
-            if let error = stdOutRetrieveAndCallHandler() {
-                terminate(error: error)
+            
+            stdOutValidator.forEach { data in
+                assert(data.isValidJSON, "Invalid JSON received from FFmpegTask on StandardOutput.")
+                handler(.success(data))
+            }
+            
+            if let error = stdOutValidator.error, error == .invalid {
+                terminateWithError(error: ServiceError.invalidResponse)
             }
         }
     }
@@ -76,54 +71,35 @@ class FFmpegTaskProcess {
     
             os_log("  FFmpegTaskProcess.stdErrReadabilityHandler (%d)", availableData.count)
             stdErrValidator.append(data: availableData)
-            if let error = stdErrRetrieveAndCallHandler() {
-                terminate(error: error)
+            
+            stdErrValidator.forEach { data in
+                assert(data.isValidJSON, "Invalid JSON received from FFmpegTask on StandardError.")
+                if let ffmpegProgress = try? JSONDecoder().decode(FFmpegProgress.self, from: data) {
+                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
+                    // TODO: Call the progress handler
+
+                } else if let ffmpegError = try? JSONDecoder().decode(JSONError.self, from: data) {
+                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegError")
+                    // TODO: Call the status handler
+
+                } else {
+                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidJSON")
+                    terminateWithError(error: ServiceError.invalidResponse)
+                }
+            }
+            
+            if let error = stdErrValidator.error, error == .invalid {
+                terminateWithError(error: ServiceError.invalidResponse)
             }
         }
     }
-    
-    private func stdOutRetrieveAndCallHandler() -> Error? {
-        os_log("  FFmpegTaskProcess.stdOutRetrieveAndCallHandler")
 
-        os_log("  %@", [String(data: stdOutValidator.data, encoding: .utf8)])
-        
-        stdOutValidator.forEach { data in
-            if data.isValidJSON {
-                handler(data, nil, nil)
-            }
-        }
-        
-        if let error = stdOutValidator.error, error == .invalid {
-            return error
-        }
-        
-        return nil
-    }
-    
-    private func stdErrRetrieveAndCallHandler() -> Error?  {
-        os_log("  FFmpegTaskProcess.stdErrRetrieveAndCallHandler")
-
-        os_log("  %@", [String(data: stdErrValidator.data, encoding: .utf8)])
-
-        stdOutValidator.forEach { data in
-            if data.isValidJSON {
-                handler(nil, data, nil)
-            }
-        }
-        
-        if let error = stdErrValidator.error, error == .invalid {
-            return error
-        }
-        
-        return nil
-    }
-
-    // The ffmpeg code appears to require FOUR (4) signals to be sent for a hard exit
-    func terminate(error: Error? = nil, allowHardExit: Bool = false) {
+    // The ffmpeg code MAY require FOUR (4) signals to be sent for a hard exit
+    func terminateWithError(error: ServiceError, allowHardExit: Bool = false) {
         os_log("FFmpegTaskProcess.terminate")
 
         process.terminate()
-        handler(nil, nil, error)
+        handler(.failure(error))
 
         if allowHardExit, usleep(250_000) == 0 {  // sleep for 0.25 seconds
             if OSAtomicIncrement32(&self.terminateFlag) == 1 {
@@ -134,13 +110,16 @@ class FFmpegTaskProcess {
         }
     }
     
-    init(completionHandler handler: @escaping CompletionHandler) {
+    init(statusService: XPCFFmpegStatusProtocol, completionHandler handler: @escaping CompletionHandler) {
         os_log("FFmpegTaskProcess.init")
         
-        let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent()
+        statusService.progress(progress: "Test")
         
-        self.process.executableURL = xpcServicesPath.appendingPathComponent("FFmpegTask")
+        //let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent()
+
         self.handler = handler
+        self.process.executableURL = xpcServicesPath.appendingPathComponent("FFmpegTask")
 
         stdOutPipe = Pipe()
         stdOutValidator = JSONStreamValidator()
@@ -162,11 +141,15 @@ class FFmpegTaskProcess {
         process.terminationHandler = { process in
             self.mutex.synchronize {
                 os_log("FFmpegTaskProcess.init.terminationHandler")
-                
+                                
                 if process.terminationReason == .uncaughtSignal {
                     os_log("  FFmpegTaskProcess.init.terminationHandler->.uncaughtSignal")
+                    self.handler(.failure(ServiceError.uncaughtSignal))
                 } else if process.terminationStatus != 0 {
                     os_log("  FFmpegTaskProcess.init.terminationHandler->.terminationStatus(%d)", process.terminationStatus)
+                    if process.terminationStatus >= 1 {
+                        self.handler(.failure(ServiceError(exitCode: process.terminationStatus)))
+                    }
                 }
                 
                 // When the process terminates, set the flag
@@ -178,13 +161,13 @@ class FFmpegTaskProcess {
     func invoke(arguments: [String]) {
         os_log("FFmpegTaskProcess.invoke")
 
-        // TODO: May need to use NSException if arguments are wrong
         do {
             process.arguments = arguments
             try process.run()
+
         } catch {
-            os_log("FFmpegTaskProcess.invoke, %@", error.localizedDescription)
-            handler(nil, nil, error)
+            os_log("FFmpegTaskProcess.invoke, error: %@", error.localizedDescription)
+            handler(.failure(ServiceError.unableToInvoke))
         }
     }
     

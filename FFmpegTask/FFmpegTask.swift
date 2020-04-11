@@ -19,19 +19,11 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 public class FFmpegTask {
     
     public enum ExitCode : Int32 {
-        case Success = 0
-        case Failure = 1
-        case InsufficientArguments = 2
-        case InvalidArguments = 3
-        case UnknownCommand = 4
-        
-        init (_ i: Int32) {
-           self.init(rawValue: min(0, max(4, i)))!
-        }
-        
-        var code: Int32 {
-            return self.rawValue
-        }
+        case success = 0
+        case failure = 1
+        case insufficientArguments = 2
+        case invalidArgument = 3
+        case unknownRequest = 4
     }
     
     // Singleton - do not access this class in any other way.
@@ -112,7 +104,7 @@ public class FFmpegTask {
 
         let cargs = CStringArray([CommandLine.arguments[0]] + FFmpegTask.FFmpegFlags +
             ["-progress", "pipe:\(progressPipe.fileHandleForWriting.fileDescriptor)"] + arguments)
-        return ExitCode(ffmpeg(Int32(cargs.count), cargs.pointer))
+        return ffmpeg(Int32(cargs.count), cargs.pointer) == 0 ? ExitCode.success : ExitCode.failure
     }
         
     private func invokeFFprobe(arguments: [String]) -> ExitCode {
@@ -121,19 +113,19 @@ public class FFmpegTask {
         stdErrConnector = PipeConnector(read: proxyStandardErrorPipe.fileHandleForReading, write: defaultStandardError, relayMode: .line, outputHandlerType: FFmpegError.self)
 
         let cargs = CStringArray([CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments)
-        return ExitCode(ffprobe(Int32(cargs.count), cargs.pointer))
+        return ffprobe(Int32(cargs.count), cargs.pointer) == 0 ? ExitCode.success : ExitCode.failure
     }
         
     public func processRequest(_ arguments: [String]) -> ExitCode {
         // Ensure there is at least the minimum number of arguments - this ensures the checks below don't fail
         if arguments.count <= 1 {
-            return ExitCode.InsufficientArguments
+            return ExitCode.insufficientArguments
         }
         
         // Retrieve the request type and validate against request list
         let request = arguments[1]
         if !FFmpegTask.ValidRequests.contains(request) {
-            return ExitCode.UnknownCommand
+            return ExitCode.unknownRequest
         }
         
         
@@ -178,7 +170,7 @@ public class FFmpegTask {
         default:
             // Ensure we have sufficient arguments for ffmpeg and ffprobe
             if arguments.count <= 2 {
-                return ExitCode.InsufficientArguments
+                return ExitCode.insufficientArguments
             }
             
             // Create an array of strings with arguments minus the application and request
@@ -187,7 +179,7 @@ public class FFmpegTask {
             // Check arguments and fail if an invalid flag is passed - rudimentary but it works
             let invalidFlags = newArguments.filter({ FFmpegTask.InvalidFlags.contains($0) })
             if !invalidFlags.isEmpty {
-                return ExitCode.InvalidArguments
+                return ExitCode.invalidArgument
             }
             
             // Check the request to determine what service to call
@@ -199,6 +191,6 @@ public class FFmpegTask {
             }
         }
 
-        return ExitCode.UnknownCommand
+        return ExitCode.unknownRequest
     }
 }

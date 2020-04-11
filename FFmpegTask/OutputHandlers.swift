@@ -42,7 +42,7 @@ struct FFmpegError: FFmpegOutputHandler {
     
     struct Error: Encodable {
         
-        enum ErrorType: String, Encodable {
+        enum Domain: String, Encodable {
             case unkown
             case os_log
             case quiet
@@ -56,12 +56,12 @@ struct FFmpegError: FFmpegOutputHandler {
             case trace
         }
         
-        public let type: ErrorType
-        public let description: String
+        public let domain: Domain
+        public let message: String
         public let indent: Int
     }
 
-    private static let RegExPattern = #"(?:^.*\[(?<Type>(?:info)|(?:error)|(?:warning))\]\s(?<Indent>\s*)(?:\:\s)*(?<Description>.*?)\s*$)|(?:^(?<oslog>(?<oslogtimestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{6}\+\d{4})(?:\s)(?<oslogprocess>\S*)\s(?<oslogmessage>.*))$)|(?:^(?<Unknown>.*)$)"#
+    private static let RegExPattern = #"(?:^.*\[(?<Domain>(?:info)|(?:error)|(?:warning))\]\s(?<Indent>\s*)(?:\:\s)*(?<Message>.*?)\s*$)|(?:^(?<oslog>(?<oslogtimestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{6}\+\d{4})(?:\s)(?<oslogprocess>\S*)\s(?<oslogmessage>.*))$)|(?:^(?<Unknown>.*)$)"#
 
     /*
      
@@ -113,24 +113,24 @@ struct FFmpegError: FFmpegOutputHandler {
         // First check for an "unknown" error, such as os_log, then for a known one
         if matchRegEx.matches.contains(index: 0, group: "Unknown") {
             let unknown = matchRegEx.matches[0, "Unknown"]
-            error = FFmpegError.Error(type: .unkown, description: unknown, indent: 0)
+            error = FFmpegError.Error(domain: .unkown, message: unknown, indent: 0)
             
         } else if matchRegEx.matches.contains(index: 0, group: "oslog") {
             // TODO: Currently not using oslogtimestamp, oslogprocess, and oslogmessage
             // These could be extracted to return a different type of structure for debugging
             let os_log = matchRegEx.matches[0, "oslog"]
-            error = FFmpegError.Error(type: .os_log, description: os_log, indent: 0)
+            error = FFmpegError.Error(domain: .os_log, message: os_log, indent: 0)
             
         } else {
-            guard let type = Error.ErrorType(rawValue: matchRegEx.matches[0, "Type"]) else {
-                os_log("Unknown error type in ffmpeg error output; unexpected label \"%@\"", type: OSLogType.error, matchRegEx.matches[0, "Type"])
+            guard let domain = Error.Domain(rawValue: matchRegEx.matches[0, "Domain"]) else {
+                os_log("Unknown error type in ffmpeg error output; unexpected label \"%@\"", type: OSLogType.error, matchRegEx.matches[0, "Domain"])
                 return nil
             }
 
-            let description = matchRegEx.matches[0, "Description"]
+            let message = matchRegEx.matches[0, "Message"]
             let indent = matchRegEx.matches[0, "Indent"].count
 
-            error = FFmpegError.Error(type: type, description: description, indent: indent)
+            error = FFmpegError.Error(domain: domain, message: message, indent: indent)
         }
     }
     
