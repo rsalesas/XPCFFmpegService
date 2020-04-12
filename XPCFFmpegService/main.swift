@@ -1,18 +1,6 @@
-//
-//  main.swift
-//  XPCFFmpegService
-//
-//  Created by Robert Salesas on 10/3/20.
-//  Copyright © 2020 Robert Salesas. All rights reserved.
-//
-
 import Foundation
 
 
-
-
-// If you assign the delegate directly to listener.delegate, the XPC stops working... ?
-let delegate = XPCFFmpegServiceDelegate()
-let listener = NSXPCListener.service()
-listener.delegate = delegate
-listener.resume()
+// The service delegate must be created and remain active until the service is terminated
+let serviceDelegate = XPCFFmpegServiceListenerDelegate()
+serviceDelegate.resume()

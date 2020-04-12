@@ -1,26 +1,18 @@
-//
-//  XPCFFmegServices.swift
-//
-//  Created by Robert Salesas on 10/3/20.
-//  Copyright © 2020 Robert Salesas. All rights reserved.
-//
-
 import Foundation
+import AppKit
 import SiliconInk_Helper
     
     
-class XPCFFmpegServiceDelegate: NSObject, NSXPCListenerDelegate {
-    func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        let exportedObject = XPCFFmpegInvoke()
-        newConnection.exportedInterface = NSXPCInterface(with: XPCFFmpegInvokeProtocol.self)
-        newConnection.exportedObject = exportedObject
-        newConnection.resume()
-        return true
+class XPCFFmpegServiceListenerDelegate: XPCServiceListenerDelegate {
+    
+    public init() {
+        super.init(interface: XPCFFmpegInvokeProtocol.self, object: XPCFFmpegInvoke())
     }
 }
 
 
-class XPCFFmpegInvoke: NSObject, XPCFFmpegInvokeProtocol {   
+
+class XPCFFmpegInvoke: XPCFFmpegInvokeProtocol {   
     
     func invoke(endpoint: NSXPCListenerEndpoint, request: String, reply handler: @escaping (CompletionHandler)) {
         invoke(endpoint: endpoint, request: request, globalOptions: [], inputs: [], filters: [], outputs: [], reply: handler)

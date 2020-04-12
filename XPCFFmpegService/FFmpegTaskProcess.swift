@@ -113,23 +113,20 @@ class FFmpegTaskProcess {
     init(statusService: XPCFFmpegStatusProtocol, completionHandler handler: @escaping CompletionHandler) {
         os_log("FFmpegTaskProcess.init")
         
+        // TODO: Remove this
         statusService.progress(progress: "Test")
         
-        //let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent()
-
         self.handler = handler
+        let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent()
         self.process.executableURL = xpcServicesPath.appendingPathComponent("FFmpegTask")
 
         stdOutPipe = Pipe()
         stdOutValidator = JSONStreamValidator()
-            
         stdErrPipe = Pipe()
         stdErrValidator = JSONStreamValidator()
 
         stdOutPipe.fileHandleForReading.readabilityHandler = stdOutReadabilityHandler
         self.process.standardOutput = stdOutPipe
-        
         stdErrPipe.fileHandleForReading.readabilityHandler = stdErrReadabilityHandler
         self.process.standardError = stdErrPipe
 

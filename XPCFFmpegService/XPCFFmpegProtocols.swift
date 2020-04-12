@@ -10,6 +10,7 @@ import Foundation
 
 // TODO: Look at @functionbuilder as a way of creating the arguments for filters, inputs, etc.
 // Class subscripts?
+// https://www.objc.io/issues/14-mac/xpc
 
 
 // Shim for (_ result: ServiceResult) -> Void as Result<> cannot be passed through Ojective-C
