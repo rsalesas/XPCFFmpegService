@@ -13,7 +13,7 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
 
-public class MyServiceListener: XPCAnonymousListenerDelegate {
+public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate {
     
     init(contentView: ContentView){
         super.init(interface: XPCFFmpegStatusProtocol.self, object: FFmpegStatusUpdate(contentView: contentView))
@@ -25,8 +25,8 @@ class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
     
     var contentView: ContentView?
     
-    private lazy var listener: MyServiceListener = {
-        let listener = MyServiceListener(contentView: contentView!)
+    private lazy var listener: FFmpegStatusUpdateListenerDelegate = {
+        let listener = FFmpegStatusUpdateListenerDelegate(contentView: contentView!)
         listener.resume()
         return listener
     }()
@@ -66,7 +66,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Create the SwiftUI view that provides the window contents.
         let contentView = ContentView(ffmpegInvoke: ffmpegInvoke)
-        ffmpegInvoke.contentView = contentView
         
         ffmpegInvoke.resume()
 
