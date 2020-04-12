@@ -3,17 +3,12 @@ import AppKit
 import SiliconInk_Helper
     
     
-class XPCFFmpegServiceListenerDelegate: XPCServiceListenerDelegate {
+class XPCFFmpegInvoke: XPCServiceListenerDelegate, XPCFFmpegInvokeProtocol {   
     
     public init() {
-        super.init(interface: XPCFFmpegInvokeProtocol.self, object: XPCFFmpegInvoke())
+        super.init(interface: XPCFFmpegInvokeProtocol.self)
     }
-}
 
-
-
-class XPCFFmpegInvoke: XPCFFmpegInvokeProtocol {   
-    
     func invoke(endpoint: NSXPCListenerEndpoint, request: String, reply handler: @escaping (CompletionHandler)) {
         invoke(endpoint: endpoint, request: request, globalOptions: [], inputs: [], filters: [], outputs: [], reply: handler)
     }

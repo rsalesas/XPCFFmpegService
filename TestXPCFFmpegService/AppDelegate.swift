@@ -10,13 +10,22 @@ import Cocoa
 import SwiftUI
 import XPCFFmpegService
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
+import SiliconInk_Helper
 
 
-
-public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate {
+public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate, XPCFFmpegStatusProtocol {
     
+    let contentView: ContentView
+
     init(contentView: ContentView){
-        super.init(interface: XPCFFmpegStatusProtocol.self, object: FFmpegStatusUpdate(contentView: contentView))
+        self.contentView = contentView
+
+        super.init(interface: XPCFFmpegStatusProtocol.self)
+    }
+    
+    public func progress(progress: String) {
+        print("---------- \(progress)")
+        contentView.string = progress
     }
 
 }
@@ -39,7 +48,7 @@ class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
         
         self.contentView = contentView
     
-        service.invoke(endpoint: listener.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, outputs: outputs) { object, error  in
+        proxy.invoke(endpoint: listener.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, outputs: outputs) { object, error  in
             os_log("***** MyServiceProxy.invoke->callback")
 
             if object is Data {

@@ -15,6 +15,7 @@
 		E12514152416B4A800F0BEAF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514142416B4A800F0BEAF /* Preview Assets.xcassets */; };
 		E12514182416B4A800F0BEAF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E12514162416B4A800F0BEAF /* Main.storyboard */; };
 		E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9C992443271F00AB2198 /* SiliconInk.Helper */; };
 		E157273B241A991600D23341 /* FFmpegTask in Embed FFmpegTask */ = {isa = PBXBuildFile; fileRef = E1B640D9238A8B28006F6502 /* FFmpegTask */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
@@ -214,6 +215,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,6 +423,7 @@
 			);
 			name = TestXPCFFmpegService;
 			packageProductDependencies = (
+				E12C9C992443271F00AB2198 /* SiliconInk.Helper */,
 			);
 			productName = TestXPCFFmpegService;
 			productReference = E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */;
@@ -910,6 +913,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E12C9C992443271F00AB2198 /* SiliconInk.Helper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E16FDBD7241EB71D00EDF30A /* XCRemoteSwiftPackageReference "SiliconInk.Helper" */;
+			productName = SiliconInk.Helper;
+		};
 		E1954BAD2435B34600F50889 /* SiliconInk.Helper */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E16FDBD7241EB71D00EDF30A /* XCRemoteSwiftPackageReference "SiliconInk.Helper" */;

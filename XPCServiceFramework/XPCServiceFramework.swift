@@ -4,19 +4,18 @@ import Foundation
 // Creates a listener delegate for the specified interface/object and mode
 public class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
     
-    public enum ListenerMode {
+    fileprivate enum ListenerMode {
         case service
         case anonymous
     }
     
+    
     fileprivate let listener: NSXPCListener
     
-    public let exportedInterface: Protocol
-    public let exportedObject: Any
+    private let interface: Protocol
     
-    public init(mode: ListenerMode, interface: Protocol, object: Any) {
-        self.exportedInterface = interface
-        self.exportedObject = object
+    fileprivate init(mode: ListenerMode, interface: Protocol) {
+        self.interface = interface
         self.listener = (mode == .service) ? NSXPCListener.service() : NSXPCListener.anonymous()
         
         super.init()
@@ -25,8 +24,8 @@ public class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
     }
     
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        newConnection.exportedInterface = NSXPCInterface(with: exportedInterface)
-        newConnection.exportedObject = exportedObject
+        newConnection.exportedInterface = NSXPCInterface(with: interface)
+        newConnection.exportedObject = self
         newConnection.resume()
         return true
     }
@@ -48,8 +47,8 @@ public class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
 // Creates a service listener for the specified interface/object
 public class XPCServiceListenerDelegate: XPCListenerDelegate {
         
-    public init(interface: Protocol, object: Any) {
-        super.init(mode: .service, interface: interface, object: object)
+    public init(interface: Protocol) {
+        super.init(mode: .service, interface: interface)
     }
 }
 
@@ -63,8 +62,8 @@ public class XPCAnonymousListenerDelegate: XPCListenerDelegate {
         }
     }
     
-    public init(interface: Protocol, object: Any) {
-        super.init(mode: .anonymous, interface: interface, object: object)
+    public init(interface: Protocol) {
+        super.init(mode: .anonymous, interface: interface)
     }
 
 }
@@ -74,7 +73,7 @@ public class XPCAnonymousListenerDelegate: XPCListenerDelegate {
 public protocol XPCServiceProxyProtocol : class {
     associatedtype Service
     
-    var service: Service { get }
+    var proxy: Service { get }
     
     func reconnect()
     
@@ -98,7 +97,7 @@ public protocol XPCServiceProxyDelegateProtocol : class {
 }
 
 
-public class XPCServiceProxy<Service>: XPCServiceProxyProtocol {
+public class XPCServiceProxy<Proxy>: XPCServiceProxyProtocol {
         
     private var serviceName: String
     private var `protocol`: Protocol
@@ -106,13 +105,13 @@ public class XPCServiceProxy<Service>: XPCServiceProxyProtocol {
     private var connection: NSXPCConnection
     private weak var delegate: XPCServiceProxyDelegateProtocol?
     
-    private lazy var _service: Service = connection.remoteObjectProxyWithErrorHandler { [weak self] error in
+    private lazy var remoteProxy: Proxy = connection.remoteObjectProxyWithErrorHandler { [weak self] error in
             self?.delegate?.connectionError(error: error)
-        } as! Service
+        } as! Proxy
     
-    public var service: Service {
+    public var proxy: Proxy {
         get {
-            return _service
+            return remoteProxy
         }
     }
 
@@ -163,27 +162,22 @@ public class XPCServiceProxy<Service>: XPCServiceProxyProtocol {
 
 
 // Factory XPC service classes
-
-/*
- public typealias Result = Swift.Result<NSXPCListenerEndpoint, FactoryError>
- public typealias CompletionHandler = (_ result: Result) -> Void
- */
-
 @objc
 public protocol XPCServiceFactoryProtocol : class {
     
     typealias CompletionHandler = (_ endpoint: NSXPCListenerEndpoint?, _ error: Error?) -> Void
-
+    
     func request(serviceName: String, reply handler: @escaping (XPCServiceFactoryProtocol.CompletionHandler))
 
     func suspend(serviceName: String)
 }
 
 
-public class XPCServiceFactory: XPCServiceFactoryProtocol {
+public class XPCServiceFactory: XPCServiceListenerDelegate, XPCServiceFactoryProtocol {
 
     public enum FactoryError: Int, Error, Codable {
         case notFound
+        case unexpectedResult
     }
     
     public typealias ServiceDictionary = [String : XPCAnonymousListenerDelegate]
@@ -191,8 +185,9 @@ public class XPCServiceFactory: XPCServiceFactoryProtocol {
     private var services : ServiceDictionary
     
     
-    init(services: ServiceDictionary) {
+    public init(services: ServiceDictionary) {
         self.services = services
+        super.init(interface: XPCServiceFactoryProtocol.self)
     }
     
     public func request(serviceName: String, reply handler: @escaping (XPCServiceFactoryProtocol.CompletionHandler)) {
@@ -213,11 +208,24 @@ public class XPCServiceFactory: XPCServiceFactoryProtocol {
     }
 }
 
-public class XPCFactoryServiceListenerDelegate: XPCServiceListenerDelegate {
+public class XPCServiceFactoryProxy: XPCServiceProxy<XPCServiceFactoryProtocol> {
     
-    public init(services: XPCServiceFactory.ServiceDictionary) {
-        super.init(interface: XPCServiceFactoryProtocol.self, object: XPCServiceFactory(services: services))
+    public typealias Result = Swift.Result<NSXPCListenerEndpoint, XPCServiceFactory.FactoryError>
+
+    public typealias CompletionHandler = (_ result: XPCServiceFactoryProxy.Result) -> Void
+    
+    
+    public init(serviceName: String) {
+        super.init(serviceName: serviceName, protocol: XPCServiceFactoryProtocol.self)
+    }
+    
+    public func request(serviceName: String, reply handler: @escaping (XPCServiceFactoryProxy.CompletionHandler)) {
+        proxy.request(serviceName: serviceName) { endpoint, error in
+            handler(Result.init(success: endpoint, failure: error))
+        }
+    }
+    
+    public func suspend(serviceName: String) {
+        proxy.suspend(serviceName: serviceName)
     }
 }
-
-
