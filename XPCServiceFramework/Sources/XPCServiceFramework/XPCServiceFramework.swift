@@ -2,7 +2,7 @@ import Foundation
 
 
 // Creates a listener delegate for the specified interface/object and mode
-public class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
+open class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
     
     fileprivate enum ListenerMode {
         case service
@@ -44,7 +44,7 @@ public class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
 
 
 // Creates a service listener for the specified interface/object
-public class XPCServiceListenerDelegate: XPCListenerDelegate {
+open class XPCServiceListenerDelegate: XPCListenerDelegate {
         
     public init(interface: Protocol) {
         super.init(mode: .service, interface: interface)
@@ -53,7 +53,7 @@ public class XPCServiceListenerDelegate: XPCListenerDelegate {
 
 
 // Creates a anonymous listener for the specified interface/object
-public class XPCAnonymousListenerDelegate: XPCListenerDelegate {
+open class XPCAnonymousListenerDelegate: XPCListenerDelegate {
         
     public var endpoint: NSXPCListenerEndpoint {
         get {
@@ -96,7 +96,7 @@ public protocol XPCServiceProxyDelegateProtocol : class {
 }
 
 
-public class XPCServiceProxy<Proxy>: XPCServiceProxyProtocol {
+open class XPCServiceProxy<Proxy>: XPCServiceProxyProtocol {
         
     private var serviceName: String
     private var `protocol`: Protocol

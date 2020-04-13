@@ -16,12 +16,18 @@
 		E12514182416B4A800F0BEAF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E12514162416B4A800F0BEAF /* Main.storyboard */; };
 		E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9C992443271F00AB2198 /* SiliconInk.Helper */; };
-		E12C9C9D244329F000AB2198 /* XPCServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */; };
-		E12C9C9E244329F100AB2198 /* XPCServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */; };
 		E12C9CAE24437DAC00AB2198 /* XPCFFmpegServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */; };
 		E12C9CAF24437DAC00AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E12C9CB124437DB400AB2198 /* XPCFFmpegServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */; };
 		E12C9CB224437DB400AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E1416FD72444872D00B58776 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E1416FD62444872D00B58776 /* SiliconInk.Helper */; };
+		E1416FD82444872D00B58776 /* SiliconInk.Helper in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E1416FD62444872D00B58776 /* SiliconInk.Helper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E1416FD92444873300B58776 /* SiliconInk.Helper in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E1954BAF2435B35100F50889 /* SiliconInk.Helper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E1416FDA2444873700B58776 /* SiliconInk.Helper in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E12C9C992443271F00AB2198 /* SiliconInk.Helper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E14C6C73244478310039D49E /* XPCServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E14C6C72244478310039D49E /* XPCServiceFramework */; };
+		E14C6C74244478310039D49E /* XPCServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E14C6C72244478310039D49E /* XPCServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E14C6C762444783A0039D49E /* XPCServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E14C6C752444783A0039D49E /* XPCServiceFramework */; };
+		E14C6C772444783A0039D49E /* XPCServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E14C6C752444783A0039D49E /* XPCServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E157273B241A991600D23341 /* FFmpegTask in Embed FFmpegTask */ = {isa = PBXBuildFile; fileRef = E1B640D9238A8B28006F6502 /* FFmpegTask */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
@@ -33,7 +39,6 @@
 		E167783F243C57E3001AC285 /* FFmpegTaskProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */; };
 		E167784E243DD874001AC285 /* FFmpegTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B1EC4A238D0D24009DE7C4 /* FFmpegTask.swift */; };
 		E16FDBDF24236F2C00EDF30A /* PipeConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16FDBDC24235BF400EDF30A /* PipeConnector.swift */; };
-		E1954BAE2435B34600F50889 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E1954BAD2435B34600F50889 /* SiliconInk.Helper */; };
 		E1954BB02435B35100F50889 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E1954BAF2435B35100F50889 /* SiliconInk.Helper */; };
 		E1B640DC238A8B28006F6502 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B640DB238A8B28006F6502 /* main.swift */; };
 		E1B640E7238A8F04006F6502 /* ffmpeg.c in Sources */ = {isa = PBXBuildFile; fileRef = E14F638323866D6D006C7AA5 /* ffmpeg.c */; };
@@ -63,8 +68,6 @@
 		E1B64100238A903F006F6502 /* libx264.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E192A7BA237E5E080026A4D9 /* libx264.a */; };
 		E1B64101238A903F006F6502 /* libx265.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E192A7BB237E5E080026A4D9 /* libx265.a */; };
 		E1B64104238A91FD006F6502 /* descriptors.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B64102238A908C006F6502 /* descriptors.c */; };
-		E1C7A0A6244215DA0044DC7E /* XPCServiceFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */; };
-		E1C7A0A82442230C0044DC7E /* XPCServiceFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +117,8 @@
 			dstSubfolderSpec = 10;
 			files = (
 				E12C9CB224437DB400AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */,
+				E14C6C74244478310039D49E /* XPCServiceFramework in Embed Frameworks */,
+				E1416FD92444873300B58776 /* SiliconInk.Helper in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -124,6 +129,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				E1416FD82444872D00B58776 /* SiliconInk.Helper in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -135,6 +141,8 @@
 			dstSubfolderSpec = 10;
 			files = (
 				E12C9CAF24437DAC00AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */,
+				E14C6C772444783A0039D49E /* XPCServiceFramework in Embed Frameworks */,
+				E1416FDA2444873700B58776 /* SiliconInk.Helper in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -162,10 +170,10 @@
 		E12514142416B4A800F0BEAF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E12514172416B4A800F0BEAF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TestXPCFFmpegService.entitlements; sourceTree = "<group>"; };
-		E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XPCServiceFactory.swift; sourceTree = "<group>"; };
 		E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = XPCFFmpegServiceFramework; sourceTree = "<group>"; };
 		E12C9CB3244427B500AB2198 /* XPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = XPCFFmpegService.entitlements; sourceTree = "<group>"; };
 		E12C9CB4244427C000AB2198 /* FFmpegTask.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FFmpegTask.entitlements; sourceTree = "<group>"; };
+		E14C6C71244477C70039D49E /* XPCServiceFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = XPCServiceFramework; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
@@ -208,7 +216,6 @@
 		E1B640D9238A8B28006F6502 /* FFmpegTask */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FFmpegTask; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B640DB238A8B28006F6502 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		E1B64102238A908C006F6502 /* descriptors.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = descriptors.c; sourceTree = "<group>"; };
-		E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCServiceFramework.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,6 +225,7 @@
 			files = (
 				E12C9CB124437DB400AB2198 /* XPCFFmpegServiceFramework in Frameworks */,
 				E1954BB02435B35100F50889 /* SiliconInk.Helper in Frameworks */,
+				E14C6C73244478310039D49E /* XPCServiceFramework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -227,6 +235,7 @@
 			files = (
 				E12C9CAE24437DAC00AB2198 /* XPCFFmpegServiceFramework in Frameworks */,
 				E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */,
+				E14C6C762444783A0039D49E /* XPCServiceFramework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,7 +262,7 @@
 				E1B640FA238A903F006F6502 /* Foundation.framework in Frameworks */,
 				E1B640FB238A903F006F6502 /* libbz2.1.0.dylib in Frameworks */,
 				E1B640FC238A903F006F6502 /* libc++.1.dylib in Frameworks */,
-				E1954BAE2435B34600F50889 /* SiliconInk.Helper in Frameworks */,
+				E1416FD72444872D00B58776 /* SiliconInk.Helper in Frameworks */,
 				E1B640FD238A903F006F6502 /* libiconv.2.dylib in Frameworks */,
 				E1B640FE238A903F006F6502 /* libobjc.A.dylib in Frameworks */,
 				E1B640FF238A903F006F6502 /* libSystem.B.dylib in Frameworks */,
@@ -333,9 +342,9 @@
 		E19CFE8E2377D61100499A02 = {
 			isa = PBXGroup;
 			children = (
-				E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */,
-				E1C7A0A7244222E90044DC7E /* XPCServiceFramework */,
 				E15CE3E724164E010067782A /* FFmpegTask */,
+				E14C6C71244477C70039D49E /* XPCServiceFramework */,
+				E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */,
 				E12513F82416B02800F0BEAF /* XPCFFmpegService */,
 				E125140C2416B4A600F0BEAF /* TestXPCFFmpegService */,
 				E19CFEF22378704900499A02 /* Frameworks */,
@@ -384,15 +393,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		E1C7A0A7244222E90044DC7E /* XPCServiceFramework */ = {
-			isa = PBXGroup;
-			children = (
-				E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */,
-				E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */,
-			);
-			path = XPCServiceFramework;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -415,6 +415,7 @@
 			packageProductDependencies = (
 				E1954BAF2435B35100F50889 /* SiliconInk.Helper */,
 				E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */,
+				E14C6C72244478310039D49E /* XPCServiceFramework */,
 			);
 			productName = XPCFFmpegService;
 			productReference = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */;
@@ -439,6 +440,7 @@
 			packageProductDependencies = (
 				E12C9C992443271F00AB2198 /* SiliconInk.Helper */,
 				E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */,
+				E14C6C752444783A0039D49E /* XPCServiceFramework */,
 			);
 			productName = TestXPCFFmpegService;
 			productReference = E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */;
@@ -460,7 +462,7 @@
 			);
 			name = FFmpegTask;
 			packageProductDependencies = (
-				E1954BAD2435B34600F50889 /* SiliconInk.Helper */,
+				E1416FD62444872D00B58776 /* SiliconInk.Helper */,
 			);
 			productName = "FFmpegTask-Swift";
 			productReference = E1B640D9238A8B28006F6502 /* FFmpegTask */;
@@ -562,8 +564,6 @@
 				E12513FE2416B02800F0BEAF /* main.swift in Sources */,
 				E167783F243C57E3001AC285 /* FFmpegTaskProcess.swift in Sources */,
 				E12514052416B27800F0BEAF /* XPCFFmpegServices.swift in Sources */,
-				E12C9C9D244329F000AB2198 /* XPCServiceFactory.swift in Sources */,
-				E1C7A0A6244215DA0044DC7E /* XPCServiceFramework.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -573,8 +573,6 @@
 			files = (
 				E12514102416B4A600F0BEAF /* ContentView.swift in Sources */,
 				E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */,
-				E12C9C9E244329F100AB2198 /* XPCServiceFactory.swift in Sources */,
-				E1C7A0A82442230C0044DC7E /* XPCServiceFramework.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -962,10 +960,18 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = XPCFFmpegServiceFramework;
 		};
-		E1954BAD2435B34600F50889 /* SiliconInk.Helper */ = {
+		E1416FD62444872D00B58776 /* SiliconInk.Helper */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E16FDBD7241EB71D00EDF30A /* XCRemoteSwiftPackageReference "SiliconInk.Helper" */;
 			productName = SiliconInk.Helper;
+		};
+		E14C6C72244478310039D49E /* XPCServiceFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XPCServiceFramework;
+		};
+		E14C6C752444783A0039D49E /* XPCServiceFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XPCServiceFramework;
 		};
 		E1954BAF2435B35100F50889 /* SiliconInk.Helper */ = {
 			isa = XCSwiftPackageProductDependency;

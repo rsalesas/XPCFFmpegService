@@ -9,6 +9,7 @@
 import Cocoa
 import SwiftUI
 import XPCFFmpegService
+import XPCServiceFramework
 import XPCFFmpegServiceFramework
 import SiliconInk_Helper
 

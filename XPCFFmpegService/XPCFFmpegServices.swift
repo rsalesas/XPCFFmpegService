@@ -1,10 +1,11 @@
 import Foundation
 import AppKit
 import SiliconInk_Helper
+import XPCServiceFramework
 import XPCFFmpegServiceFramework
     
 
-class XPCFFmpegInvoke: XPCServiceListenerDelegate, XPCFFmpegInvokeProtocol {   
+class XPCFFmpegInvokeService: XPCServiceListenerDelegate, XPCFFmpegInvokeProtocol {   
     
     public init() {
         super.init(interface: XPCFFmpegInvokeProtocol.self)
