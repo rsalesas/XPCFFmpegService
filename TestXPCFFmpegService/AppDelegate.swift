@@ -36,6 +36,7 @@ public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate, X
 
 class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
     
+    
     init() {
         super.init(serviceName: "com.siliconink.XPCFFmpegService", protocol: XPCFFmpegInvokeProtocol.self)
     }
@@ -59,12 +60,14 @@ class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
 
             } else if let error = error {
                 contentView.error = error.localizedDescription
+            } else {
+                contentView.result = object.debugDescription
+
             }
         }
     }
 
 }
-
 
 
 @NSApplicationMain
@@ -78,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Create the SwiftUI view that provides the window contents.
         let contentView = ContentView(ffmpegInvoke: ffmpegInvoke)
-        
+                
         ffmpegInvoke.resume()
 
         // Create the window and set the content view. 

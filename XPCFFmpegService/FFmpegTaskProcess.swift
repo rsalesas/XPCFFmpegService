@@ -63,7 +63,12 @@ class FFmpegTaskProcess {
                         os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
 //                        handler(.success(ffmpegVersion))
                         handler(.success("Success!"))
-
+                    
+                    } else if data.isEmptyJSON {
+                        
+                    } else if let json = try? JSONSerialization.jsonObject(with: data, options: [.allowFragments]) {
+                        handler(.success(json))
+                        
                     } else {
                         os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidJSON")
                         terminateWithError(error: ServiceError.invalidResponse)

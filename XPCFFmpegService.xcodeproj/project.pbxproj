@@ -161,10 +161,11 @@
 		E12514112416B4A800F0BEAF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E12514142416B4A800F0BEAF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E12514172416B4A800F0BEAF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		E12514192416B4A800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TestXPCFFmpegService.entitlements; sourceTree = "<group>"; };
 		E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XPCServiceFactory.swift; sourceTree = "<group>"; };
 		E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = XPCFFmpegServiceFramework; sourceTree = "<group>"; };
+		E12C9CB3244427B500AB2198 /* XPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = XPCFFmpegService.entitlements; sourceTree = "<group>"; };
+		E12C9CB4244427C000AB2198 /* FFmpegTask.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FFmpegTask.entitlements; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
@@ -267,6 +268,7 @@
 		E12513F82416B02800F0BEAF /* XPCFFmpegService */ = {
 			isa = PBXGroup;
 			children = (
+				E12C9CB3244427B500AB2198 /* XPCFFmpegService.entitlements */,
 				E12513F92416B02800F0BEAF /* XPCFFmpegServices.swift */,
 				E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */,
 				E12513FD2416B02800F0BEAF /* main.swift */,
@@ -282,7 +284,6 @@
 				E125140F2416B4A600F0BEAF /* ContentView.swift */,
 				E12514112416B4A800F0BEAF /* Assets.xcassets */,
 				E12514162416B4A800F0BEAF /* Main.storyboard */,
-				E12514192416B4A800F0BEAF /* Info.plist */,
 				E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */,
 				E12514132416B4A800F0BEAF /* Preview Content */,
 			);
@@ -300,6 +301,7 @@
 		E15CE3E724164E010067782A /* FFmpegTask */ = {
 			isa = PBXGroup;
 			children = (
+				E12C9CB4244427C000AB2198 /* FFmpegTask.entitlements */,
 				E15CE3FF241697660067782A /* FFmpegTools */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
@@ -471,7 +473,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1140;
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1140;
 				ORGANIZATIONNAME = "Robert Salesas";
 				TargetAttributes = {
 					E12513F62416B02800F0BEAF = {
@@ -627,6 +629,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = XPCFFmpegService/XPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 89677882UG;
@@ -649,6 +653,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = XPCFFmpegService/XPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 89677882UG;
@@ -671,6 +677,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
@@ -686,6 +693,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
@@ -699,6 +707,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
@@ -714,6 +723,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
@@ -839,14 +849,20 @@
 		E1B640DE238A8B28006F6502 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FFmpegTask/FFmpegTask.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/FFmpegTask/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -858,14 +874,20 @@
 		E1B640DF238A8B28006F6502 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FFmpegTask/FFmpegTask.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/FFmpegTask/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
