@@ -94,8 +94,8 @@ struct ContentView: View {
 
     func invoke() {
         assert(ffmpegInvoke != nil, "Service has not been initiatised")
-        if let url = $url.wrappedValue {
-            ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: ["-show_format"], inputs: ["-i", url.path], outputs: [], contentView: self)
+        if let url = $url.wrappedValue, let bookmark = try? url.bookmarkData() {
+            ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: ["-show_format"], inputs: ["-i"], outputs: [], url: bookmark, contentView: self)
     //        ffmpegInvoke?.invoke(request: "-version", globalOptions: [], inputs: [], outputs: [], contentView: self)
     //        ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: [], inputs: ["-i", "NotAFile"], outputs: [], contentView: self)
         }

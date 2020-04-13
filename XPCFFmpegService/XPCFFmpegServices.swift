@@ -10,15 +10,7 @@ class XPCFFmpegInvoke: XPCServiceListenerDelegate, XPCFFmpegInvokeProtocol {
         super.init(interface: XPCFFmpegInvokeProtocol.self)
     }
 
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, reply handler: @escaping (CompletionHandler)) {
-        invoke(endpoint: endpoint, request: request, globalOptions: [], inputs: [], filters: [], outputs: [], reply: handler)
-    }
-        
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], outputs: [String], reply handler: @escaping (CompletionHandler)) {
-        invoke(endpoint: endpoint, request: request, globalOptions: globalOptions, inputs: inputs, filters: [], outputs: outputs, reply: handler)
-    }
-    
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], filters: [String], outputs: [String], reply handler: @escaping (CompletionHandler)) {
+    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], filters: [String], outputs: [String], url: Data, reply handler: @escaping (CompletionHandler)) {
         
         let connection = NSXPCConnection(listenerEndpoint: endpoint)
         connection.remoteObjectInterface = NSXPCInterface(with: XPCFFmpegStatusProtocol.self)
@@ -42,7 +34,10 @@ class XPCFFmpegInvoke: XPCServiceListenerDelegate, XPCFFmpegInvokeProtocol {
             }
         })
         
-        ffmpegTaskProcess.invoke(arguments: [request] + globalOptions + inputs + filters + outputs)
+        let url = try! URL(resolvingBookmarkData: url)
+        let newInput = inputs + [url.path]
+        
+        ffmpegTaskProcess.invoke(arguments: [request] + globalOptions + newInput + filters + outputs)
     }
     
 }

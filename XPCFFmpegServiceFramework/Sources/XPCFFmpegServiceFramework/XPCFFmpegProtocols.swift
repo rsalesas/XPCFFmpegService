@@ -125,11 +125,7 @@ public enum ServiceError : Int32, Error, Codable {
 
 @objc public protocol XPCFFmpegInvokeProtocol {
     
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, reply handler: @escaping (CompletionHandler))
-    
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], outputs: [String], reply handler: @escaping (CompletionHandler))
-
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], filters: [String], outputs: [String], reply handler: @escaping (CompletionHandler))
+    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], filters: [String], outputs: [String], url: Data, reply handler: @escaping (CompletionHandler))
 
 }
 

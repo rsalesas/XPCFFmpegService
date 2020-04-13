@@ -41,12 +41,12 @@ class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
         super.init(serviceName: "com.siliconink.XPCFFmpegService", protocol: XPCFFmpegInvokeProtocol.self)
     }
     
-    func invoke(request: String, globalOptions: [String], inputs: [String], outputs: [String], contentView: ContentView) {
+    func invoke(request: String, globalOptions: [String], inputs: [String], outputs: [String], url: Data, contentView: ContentView) {
         
         var listener: FFmpegStatusUpdateListenerDelegate? = FFmpegStatusUpdateListenerDelegate(contentView: contentView)
         listener?.resume()
     
-        proxy.invoke(endpoint: listener!.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, outputs: outputs) { object, error  in
+        proxy.invoke(endpoint: listener!.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, filters: [], outputs: outputs, url: url) { object, error  in
             os_log("***** MyServiceProxy.invoke->callback")
 
             listener = nil
