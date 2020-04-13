@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E1B640D8238A8B28006F6502"
-               BuildableName = "FFmpegTask"
-               BlueprintName = "FFmpegTask"
+               BlueprintIdentifier = "E125140A2416B4A600F0BEAF"
+               BuildableName = "TestXPCFFmpegService.app"
+               BlueprintName = "TestXPCFFmpegService"
                ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,50 +44,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1B640D8238A8B28006F6502"
-            BuildableName = "FFmpegTask"
-            BlueprintName = "FFmpegTask"
+            BlueprintIdentifier = "E125140A2416B4A600F0BEAF"
+            BuildableName = "TestXPCFFmpegService.app"
+            BlueprintName = "TestXPCFFmpegService"
             ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y $(SRCROOT)/../Test/Output.mkv"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffprobe -i NotAFile"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffmpeg -i $(SRCROOT)/../Test/Test1.mp4 -c copy -y Output.mkv"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffmpeg -i $(SRCROOT)/../Test/Big_Buck_Bunny_1080_10s_1MB.mp4 -y $(SRCROOT)/../Test/Output.m4v"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_format -show_streams -show_frames"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_format -show_entries format=size"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ffprobe -i $(SRCROOT)/../Test/Test1.m4v -show_entries format=size"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-version"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-codecs"
-            isEnabled = "NO">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -99,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1B640D8238A8B28006F6502"
-            BuildableName = "FFmpegTask"
-            BlueprintName = "FFmpegTask"
+            BlueprintIdentifier = "E125140A2416B4A600F0BEAF"
+            BuildableName = "TestXPCFFmpegService.app"
+            BlueprintName = "TestXPCFFmpegService"
             ReferencedContainer = "container:XPCFFmpegService.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

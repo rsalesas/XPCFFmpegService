@@ -19,7 +19,7 @@ import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
         1:  General failure
         2:  Insufficient arguments
         3:  Invalid arguments
-        4:  Unknown command
+        4:  Unknown request
  */
 
-exit(FFmpegTask.Application.processRequest(CommandLine.arguments).code)
+exit(FFmpegTask.Application.processRequest(CommandLine.arguments).rawValue)

@@ -8,13 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		E12513FE2416B02800F0BEAF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513FD2416B02800F0BEAF /* main.swift */; };
-		E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */; };
+		E12514052416B27800F0BEAF /* XPCFFmpegServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegServices.swift */; };
 		E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125140D2416B4A600F0BEAF /* AppDelegate.swift */; };
 		E12514102416B4A600F0BEAF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125140F2416B4A600F0BEAF /* ContentView.swift */; };
 		E12514122416B4A800F0BEAF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514112416B4A800F0BEAF /* Assets.xcassets */; };
 		E12514152416B4A800F0BEAF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E12514142416B4A800F0BEAF /* Preview Assets.xcassets */; };
 		E12514182416B4A800F0BEAF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E12514162416B4A800F0BEAF /* Main.storyboard */; };
 		E12514222417C04400F0BEAF /* XPCFFmpegService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9C992443271F00AB2198 /* SiliconInk.Helper */; };
+		E12C9C9D244329F000AB2198 /* XPCServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */; };
+		E12C9C9E244329F100AB2198 /* XPCServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */; };
+		E12C9CAE24437DAC00AB2198 /* XPCFFmpegServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */; };
+		E12C9CAF24437DAC00AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E12C9CB124437DB400AB2198 /* XPCFFmpegServiceFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */; };
+		E12C9CB224437DB400AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */ = {isa = PBXBuildFile; productRef = E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E157273B241A991600D23341 /* FFmpegTask in Embed FFmpegTask */ = {isa = PBXBuildFile; fileRef = E1B640D9238A8B28006F6502 /* FFmpegTask */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		E15CE41524169A300067782A /* ffmpeg_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE40E24169A2F0067782A /* ffmpeg_opt.c */; };
 		E15CE41724169A300067782A /* ffmpeg_videotoolbox.c in Sources */ = {isa = PBXBuildFile; fileRef = E15CE41124169A2F0067782A /* ffmpeg_videotoolbox.c */; };
@@ -56,6 +63,8 @@
 		E1B64100238A903F006F6502 /* libx264.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E192A7BA237E5E080026A4D9 /* libx264.a */; };
 		E1B64101238A903F006F6502 /* libx265.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E192A7BB237E5E080026A4D9 /* libx265.a */; };
 		E1B64104238A91FD006F6502 /* descriptors.c in Sources */ = {isa = PBXBuildFile; fileRef = E1B64102238A908C006F6502 /* descriptors.c */; };
+		E1C7A0A6244215DA0044DC7E /* XPCServiceFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */; };
+		E1C7A0A82442230C0044DC7E /* XPCServiceFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +113,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				E12C9CB224437DB400AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -124,6 +134,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				E12C9CAF24437DAC00AB2198 /* XPCFFmpegServiceFramework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -141,7 +152,7 @@
 
 /* Begin PBXFileReference section */
 		E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = XPCFFmpegService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
-		E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegService.swift; sourceTree = "<group>"; };
+		E12513F92416B02800F0BEAF /* XPCFFmpegServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegServices.swift; sourceTree = "<group>"; };
 		E12513FD2416B02800F0BEAF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		E12513FF2416B02800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestXPCFFmpegService.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -150,8 +161,11 @@
 		E12514112416B4A800F0BEAF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E12514142416B4A800F0BEAF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E12514172416B4A800F0BEAF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		E12514192416B4A800F0BEAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TestXPCFFmpegService.entitlements; sourceTree = "<group>"; };
+		E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XPCServiceFactory.swift; sourceTree = "<group>"; };
+		E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = XPCFFmpegServiceFramework; sourceTree = "<group>"; };
+		E12C9CB3244427B500AB2198 /* XPCFFmpegService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = XPCFFmpegService.entitlements; sourceTree = "<group>"; };
+		E12C9CB4244427C000AB2198 /* FFmpegTask.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FFmpegTask.entitlements; sourceTree = "<group>"; };
 		E14F637F23866D6D006C7AA5 /* ffprobe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffprobe.c; sourceTree = "<group>"; };
 		E14F638323866D6D006C7AA5 /* ffmpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffmpeg.c; sourceTree = "<group>"; };
 		E14F63932387958C006C7AA5 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../FFmpeg/lib/libavformat.a; sourceTree = "<group>"; };
@@ -194,6 +208,7 @@
 		E1B640D9238A8B28006F6502 /* FFmpegTask */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FFmpegTask; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B640DB238A8B28006F6502 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		E1B64102238A908C006F6502 /* descriptors.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = descriptors.c; sourceTree = "<group>"; };
+		E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCServiceFramework.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -201,6 +216,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E12C9CB124437DB400AB2198 /* XPCFFmpegServiceFramework in Frameworks */,
 				E1954BB02435B35100F50889 /* SiliconInk.Helper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -209,6 +225,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E12C9CAE24437DAC00AB2198 /* XPCFFmpegServiceFramework in Frameworks */,
+				E12C9C9A2443271F00AB2198 /* SiliconInk.Helper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,7 +268,8 @@
 		E12513F82416B02800F0BEAF /* XPCFFmpegService */ = {
 			isa = PBXGroup;
 			children = (
-				E12513F92416B02800F0BEAF /* XPCFFmpegService.swift */,
+				E12C9CB3244427B500AB2198 /* XPCFFmpegService.entitlements */,
+				E12513F92416B02800F0BEAF /* XPCFFmpegServices.swift */,
 				E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */,
 				E12513FD2416B02800F0BEAF /* main.swift */,
 				E12513FF2416B02800F0BEAF /* Info.plist */,
@@ -265,7 +284,6 @@
 				E125140F2416B4A600F0BEAF /* ContentView.swift */,
 				E12514112416B4A800F0BEAF /* Assets.xcassets */,
 				E12514162416B4A800F0BEAF /* Main.storyboard */,
-				E12514192416B4A800F0BEAF /* Info.plist */,
 				E125141A2416B4A800F0BEAF /* TestXPCFFmpegService.entitlements */,
 				E12514132416B4A800F0BEAF /* Preview Content */,
 			);
@@ -283,6 +301,7 @@
 		E15CE3E724164E010067782A /* FFmpegTask */ = {
 			isa = PBXGroup;
 			children = (
+				E12C9CB4244427C000AB2198 /* FFmpegTask.entitlements */,
 				E15CE3FF241697660067782A /* FFmpegTools */,
 				E1B640D2238A8A55006F6502 /* bridging.h */,
 				E1B64102238A908C006F6502 /* descriptors.c */,
@@ -314,6 +333,8 @@
 		E19CFE8E2377D61100499A02 = {
 			isa = PBXGroup;
 			children = (
+				E12C9CAC24437D4000AB2198 /* XPCFFmpegServiceFramework */,
+				E1C7A0A7244222E90044DC7E /* XPCServiceFramework */,
 				E15CE3E724164E010067782A /* FFmpegTask */,
 				E12513F82416B02800F0BEAF /* XPCFFmpegService */,
 				E125140C2416B4A600F0BEAF /* TestXPCFFmpegService */,
@@ -363,6 +384,15 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		E1C7A0A7244222E90044DC7E /* XPCServiceFramework */ = {
+			isa = PBXGroup;
+			children = (
+				E1C7A0A5244215DA0044DC7E /* XPCServiceFramework.swift */,
+				E12C9C9B244329DC00AB2198 /* XPCServiceFactory.swift */,
+			);
+			path = XPCServiceFramework;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -384,6 +414,7 @@
 			name = XPCFFmpegService;
 			packageProductDependencies = (
 				E1954BAF2435B35100F50889 /* SiliconInk.Helper */,
+				E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */,
 			);
 			productName = XPCFFmpegService;
 			productReference = E12513F72416B02800F0BEAF /* XPCFFmpegService.xpc */;
@@ -406,6 +437,8 @@
 			);
 			name = TestXPCFFmpegService;
 			packageProductDependencies = (
+				E12C9C992443271F00AB2198 /* SiliconInk.Helper */,
+				E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */,
 			);
 			productName = TestXPCFFmpegService;
 			productReference = E125140B2416B4A600F0BEAF /* TestXPCFFmpegService.app */;
@@ -440,7 +473,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1140;
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1140;
 				ORGANIZATIONNAME = "Robert Salesas";
 				TargetAttributes = {
 					E12513F62416B02800F0BEAF = {
@@ -528,7 +561,9 @@
 			files = (
 				E12513FE2416B02800F0BEAF /* main.swift in Sources */,
 				E167783F243C57E3001AC285 /* FFmpegTaskProcess.swift in Sources */,
-				E12514052416B27800F0BEAF /* XPCFFmpegService.swift in Sources */,
+				E12514052416B27800F0BEAF /* XPCFFmpegServices.swift in Sources */,
+				E12C9C9D244329F000AB2198 /* XPCServiceFactory.swift in Sources */,
+				E1C7A0A6244215DA0044DC7E /* XPCServiceFramework.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,6 +573,8 @@
 			files = (
 				E12514102416B4A600F0BEAF /* ContentView.swift in Sources */,
 				E125140E2416B4A600F0BEAF /* AppDelegate.swift in Sources */,
+				E12C9C9E244329F100AB2198 /* XPCServiceFactory.swift in Sources */,
+				E1C7A0A82442230C0044DC7E /* XPCServiceFramework.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -592,6 +629,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = XPCFFmpegService/XPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 89677882UG;
@@ -614,6 +653,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = XPCFFmpegService/XPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 89677882UG;
@@ -636,6 +677,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
@@ -651,6 +693,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
@@ -664,6 +707,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TestXPCFFmpegService/TestXPCFFmpegService.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"TestXPCFFmpegService/Preview Content\"";
@@ -679,6 +723,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
@@ -804,14 +849,20 @@
 		E1B640DE238A8B28006F6502 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FFmpegTask/FFmpegTask.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/FFmpegTask/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -823,14 +874,20 @@
 		E1B640DF238A8B28006F6502 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FFmpegTask/FFmpegTask.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 89677882UG;
 				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/FFmpegTask/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/lib\"",
 					/usr/local/lib,
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OBJC_BRIDGING_HEADER = FFmpegTask/bridging.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -892,6 +949,19 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E12C9C992443271F00AB2198 /* SiliconInk.Helper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E16FDBD7241EB71D00EDF30A /* XCRemoteSwiftPackageReference "SiliconInk.Helper" */;
+			productName = SiliconInk.Helper;
+		};
+		E12C9CAD24437DAC00AB2198 /* XPCFFmpegServiceFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XPCFFmpegServiceFramework;
+		};
+		E12C9CB024437DB400AB2198 /* XPCFFmpegServiceFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XPCFFmpegServiceFramework;
+		};
 		E1954BAD2435B34600F50889 /* SiliconInk.Helper */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E16FDBD7241EB71D00EDF30A /* XCRemoteSwiftPackageReference "SiliconInk.Helper" */;

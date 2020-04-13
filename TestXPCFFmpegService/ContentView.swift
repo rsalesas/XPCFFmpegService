@@ -8,48 +8,97 @@
 
 import SwiftUI
 import XPCFFmpegService
+import SiliconInk_Helper
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
-class MyServiceProxy {
-    let connection: NSXPCConnection
-    let service: XPCFFmegServiceProtocol
-    
-    init(){
-        connection = NSXPCConnection(serviceName: "com.siliconink.XPCFFmpegService")
-        connection.remoteObjectInterface = NSXPCInterface(with: XPCFFmegServiceProtocol.self)
-        connection.resume()
-        
-        service = connection.remoteObjectProxyWithErrorHandler { error in
-                print("Received error:", error)
-            } as! XPCFFmegServiceProtocol
-    }
-    
-    func makeUppperCaseString(string: String, contentView: ContentView) {
-        service.invoke(request: string) { response, log, error  in
-            if let response = response {
-                contentView.string = String(data: response, encoding: .utf8) ?? error.debugDescription
-            }
-        }
-    }
+func openfiledlg (title: String, message: String) -> URL?
+{
+    let myFiledialog: NSOpenPanel = NSOpenPanel()
+
+    myFiledialog.prompt = "Test"
+    myFiledialog.worksWhenModal = true
+    myFiledialog.allowsMultipleSelection = false
+    myFiledialog.canChooseDirectories = false
+    myFiledialog.resolvesAliases = true
+    myFiledialog.title = title
+    myFiledialog.message = message
+    myFiledialog.runModal()
+    return myFiledialog.url
 }
 
-
 struct ContentView: View {
-    let myService: MyServiceProxy = MyServiceProxy()
     
-    @State var string: String = "-version"
+    weak var ffmpegInvoke: XPCFFmpegInvoke?
+    
+    @State var url: URL? = nil
+
+    
+    @State var progress: String = ""
+    
+    @State var error: String = ""
+    @State var status: String = ProcessInfo.processInfo.isSandboxed.string
+    @State var result: String = ""
 
     var body: some View {
         VStack {
-            Text("\(string)")
-            Button(action: { self.myService.makeUppperCaseString(string: self.string, contentView: self) }) {
-                Text("Make Uppercase")
+            HStack {
+                Text("Result: ")
+                Text("\(result)")
             }
-            Button(action: { self.string = "-version" }) {
+            HStack {
+                Text("Error: ")
+                Text("\(error)")
+            }
+            HStack {
+                Text("Status: ")
+                Text("\(status)")
+            }
+            HStack {
+                Text("Progress: ")
+                Text("\(progress)")
+            }
+            Button(action: { self.invoke() }) {
+                Text("Invoke")
+            }
+            Button(action: {
+                if let url = openfiledlg(title: "Test", message: "Select a file") {
+                    self.url = url
+                    if let data = try? Data(contentsOf: url) {
+                        self.progress = data.count.string
+                    }
+                }
+            }) {
+                Text("Choose File")
+            }
+            Button(action: {
+                self.progress = ""
+                self.error = ""
+                self.status = ""
+                self.result = ""
+            }) {
                 Text("Reset")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    
+    init() {
+        ffmpegInvoke = nil
+    }
+    
+    init(ffmpegInvoke: XPCFFmpegInvoke) {
+        self.ffmpegInvoke = ffmpegInvoke
+    }
+
+    func invoke() {
+        assert(ffmpegInvoke != nil, "Service has not been initiatised")
+        if let url = $url.wrappedValue, let bookmark = try? url.bookmarkData() {
+            ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: ["-show_format"], inputs: ["-i"], outputs: [], url: bookmark, contentView: self)
+    //        ffmpegInvoke?.invoke(request: "-version", globalOptions: [], inputs: [], outputs: [], contentView: self)
+    //        ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: [], inputs: ["-i", "NotAFile"], outputs: [], contentView: self)
+        }
     }
 }
 

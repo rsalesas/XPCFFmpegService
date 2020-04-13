@@ -8,16 +8,81 @@
 
 import Cocoa
 import SwiftUI
+import XPCFFmpegService
+import XPCFFmpegServiceFramework
+import SiliconInk_Helper
+
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
+
+
+
+
+public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate, XPCFFmpegStatusProtocol {
+    
+    let contentView: ContentView
+
+    init(contentView: ContentView){
+        self.contentView = contentView
+
+        super.init(interface: XPCFFmpegStatusProtocol.self)
+    }
+    
+    public func progress(progress: String) {
+        os_log("---------- %@", progress)
+        contentView.progress = progress
+    }
+
+}
+
+class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
+    
+    
+    init() {
+        super.init(serviceName: "com.siliconink.XPCFFmpegService", protocol: XPCFFmpegInvokeProtocol.self)
+    }
+    
+    func invoke(request: String, globalOptions: [String], inputs: [String], outputs: [String], url: Data, contentView: ContentView) {
+        
+        var listener: FFmpegStatusUpdateListenerDelegate? = FFmpegStatusUpdateListenerDelegate(contentView: contentView)
+        listener?.resume()
+    
+        proxy.invoke(endpoint: listener!.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, filters: [], outputs: outputs, url: url) { object, error  in
+            os_log("***** MyServiceProxy.invoke->callback")
+
+            listener = nil
+            
+            if object is Data {
+                let data = object as! Data
+                contentView.result = String(data: data, encoding: .utf8) ?? "<Error encoding to .utf8>"
+            } else if object is String {
+                let string = object as! String
+                contentView.result = string
+
+            } else if let error = error {
+                contentView.error = error.localizedDescription
+            } else {
+                contentView.result = object.debugDescription
+
+            }
+        }
+    }
+
+}
+
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     var window: NSWindow!
+    
+    let ffmpegInvoke = XPCFFmpegInvoke()
 
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Create the SwiftUI view that provides the window contents.
-        let contentView = ContentView()
+        let contentView = ContentView(ffmpegInvoke: ffmpegInvoke)
+                
+        ffmpegInvoke.resume()
 
         // Create the window and set the content view. 
         window = NSWindow(
