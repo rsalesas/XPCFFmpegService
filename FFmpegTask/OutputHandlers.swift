@@ -32,13 +32,13 @@ extension FFmpegOutputHandler {
         #else
             encoder.outputFormatting = [.withoutEscapingSlashes]
         #endif
-        
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+
+        //encoder.keyEncodingStrategy = .convertToSnakeCase
         return (try? encoder.encode(self)) ?? Data(capacity: 0)
     }
 }
 
-struct FFmpegError: FFmpegOutputHandler {
+struct FFmpegStatus: FFmpegOutputHandler {
     
     struct Error: Encodable {
         
@@ -102,10 +102,10 @@ struct FFmpegError: FFmpegOutputHandler {
      
      */
     
-    public let error: FFmpegError.Error
+    public let status: FFmpegStatus.Error
     
     init?(from: Data) {
-        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegError.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
+        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegStatus.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
             os_log("Invalid ffmpeg error output; unexpected format", type: OSLogType.error)
             return nil
         }
@@ -113,13 +113,13 @@ struct FFmpegError: FFmpegOutputHandler {
         // First check for an "unknown" error, such as os_log, then for a known one
         if matchRegEx.matches.contains(index: 0, group: "Unknown") {
             let unknown = matchRegEx.matches[0, "Unknown"]
-            error = FFmpegError.Error(domain: .unkown, message: unknown, indent: 0)
+            status = FFmpegStatus.Error(domain: .unkown, message: unknown, indent: 0)
             
         } else if matchRegEx.matches.contains(index: 0, group: "oslog") {
             // TODO: Currently not using oslogtimestamp, oslogprocess, and oslogmessage
             // These could be extracted to return a different type of structure for debugging
             let os_log = matchRegEx.matches[0, "oslog"]
-            error = FFmpegError.Error(domain: .os_log, message: os_log, indent: 0)
+            status = FFmpegStatus.Error(domain: .os_log, message: os_log, indent: 0)
             
         } else {
             guard let domain = Error.Domain(rawValue: matchRegEx.matches[0, "Domain"]) else {
@@ -130,7 +130,7 @@ struct FFmpegError: FFmpegOutputHandler {
             let message = matchRegEx.matches[0, "Message"]
             let indent = matchRegEx.matches[0, "Indent"].count
 
-            error = FFmpegError.Error(domain: domain, message: message, indent: indent)
+            status = FFmpegStatus.Error(domain: domain, message: message, indent: indent)
         }
     }
     
@@ -141,24 +141,29 @@ struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
     
     private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
 
-    var frame: Int
-    var fps: Double
-    var input: Int
-    var stream: Int
-    var quality: Double
-    var bitrate: Double?
-    var totalSize: Int?
-    var outTime: TimeInterval?
-    var duplicateFrames: Int
-    var droppedFrames: Int
-    var speed: Int?
-    var finished: Bool
+    struct FFmpegProgressStruct: Encodable {
+        var frame: Int
+        var fps: Double
+        var input: Int
+        var stream: Int
+        var quality: Double
+        var bitrate: Double?
+        var totalSize: Int?
+        var outTime: TimeInterval?
+        var duplicateFrames: Int
+        var droppedFrames: Int
+        var speed: Int?
+        var finished: Bool
+    }
 
     static var terminators: [Data]  {
         get {
             return ["continue\n".data(using: .utf8)!, "end\n".data(using: .utf8)!]
         }
     }
+    
+    public let progress: FFmpegProgressStruct
+    
     
     init?(from: Data) {
         guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegProgress.RegExPattern, options: []), matchRegEx.matches.count >= 1 else {
@@ -181,18 +186,7 @@ struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
         let ms = TimeInterval(matchRegEx.matches[0, "OutTime"])
         let speed = Int(matchRegEx.matches[0, "Speed"])
         
-        self.frame = frame
-        self.fps = fps
-        self.input = input
-        self.stream = stream
-        self.quality = quality
-        self.bitrate = bitrate
-        self.totalSize = totalSize
-        self.outTime = ms == nil ? nil : ms! / 1000000.0
-        self.duplicateFrames = duplicateFrames
-        self.droppedFrames = droppedFrames
-        self.speed = speed
-        self.finished = matchRegEx.matches[0, "Progress"] == "end"
+        self.progress = FFmpegProgressStruct(frame: frame, fps: fps, input: input, stream: stream, quality: quality, bitrate: bitrate, totalSize: totalSize, outTime: ms == nil ? nil : ms! / 1000000.0, duplicateFrames: duplicateFrames, droppedFrames: droppedFrames, speed: speed, finished: matchRegEx.matches[0, "Progress"] == "end")
     }
     
 }
@@ -261,7 +255,7 @@ struct FFmpegCodecs: FFmpegOutputHandler {
 struct FFmpegBitstreamFilters: FFmpegOutputHandler {
     private static let RegExPattern = #"^(?<Filter>(?!Bitstream filters:)\S+)$"#  // -bsfs
     
-    public let filters: [String]
+    public let bitstreamFilters: [String]
     
     init?(from: Data) {
         guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegBitstreamFilters.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
@@ -276,7 +270,7 @@ struct FFmpegBitstreamFilters: FFmpegOutputHandler {
             filters.append(filter)
         }
         
-        self.filters = filters
+        self.bitstreamFilters = filters
     }
 }
 
@@ -474,14 +468,19 @@ struct FFmpegLayouts: FFmpegOutputHandler {
         let description: String
     }
     
-    public let individual: [Layout]
-    public let standard: [Layout]
+    struct FFmpegLayoutsStruct: Encodable {
+        let individual: [Layout]
+        let standard: [Layout]
+    }
 
     enum AddToLayoutList {
         case none
         case individual
         case standard
     }
+    
+    public let layouts: FFmpegLayoutsStruct
+    
 
     init?(from: Data) {
         guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegLayouts.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
@@ -510,8 +509,7 @@ struct FFmpegLayouts: FFmpegOutputHandler {
             }
         }
         
-        self.individual = individual
-        self.standard = standard
+        self.layouts = FFmpegLayoutsStruct(individual: individual, standard: standard)
     }
 }
 
@@ -589,14 +587,19 @@ struct FFmpegPixelFormats: FFmpegOutputHandler {
 struct FFmpegProtocols: FFmpegOutputHandler {
     private static let RegExPattern = #"(?:(?:(?<Input>Input):\n)+|(?:(?<Output>Output):\n)+)|^\s\s(?<Protocol>\S+)*$"#  // -protocols, a bit different in that Input/Output are states
     
-    public let input: [String]
-    public let output: [String]
+    struct FFmpegProtocolsStruct: Encodable {
+        let input: [String]
+        let output: [String]
+    }
     
     enum AddToProtocolList {
         case none
         case input
         case output
     }
+    
+    public let protocols: FFmpegProtocolsStruct
+    
     
     init?(from: Data) {
         guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegProtocols.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
@@ -623,8 +626,7 @@ struct FFmpegProtocols: FFmpegOutputHandler {
             }
         }
         
-        input = inputProtocols
-        output = outputProtocols
+        self.protocols = FFmpegProtocolsStruct(input: inputProtocols, output: outputProtocols)
     }
 }
 
@@ -662,11 +664,15 @@ struct FFmpegSampleFormats: FFmpegOutputHandler {
 struct FFmpegVersion: FFmpegOutputHandler {
     private static let RegExPattern = #"^(?:FFmpegTask version (?<Version>\S+)\s(?<FFmpegCopyright>.*)\nbuilt with (?<Compiler>.*)\nconfiguration: (?<Configuration>.*)\n)|(?:(?<Library>lib\S+)\s*(?<Major>\d+)\.\s*(?<Minor>\d+)\.\s*(?<Build>\d+))"#  // -version
     
-    public let version: String
-    public let compiler: String
-    public let ffmpegCopyright: String
-    public let configuration: String
-    public var libraries: [String : String] = [:]
+    struct FFmpegVersionStruct: Encodable {
+        let version: String
+        let compiler: String
+        let ffmpegCopyright: String
+        let configuration: String
+        var libraries: [String : String]
+    }
+    
+    public let version: FFmpegVersionStruct
 
     
     init?(from: Data) {
@@ -675,13 +681,14 @@ struct FFmpegVersion: FFmpegOutputHandler {
             return nil
         }
         
-        self.version = matchRegEx.matches[0, "Version"]
-        self.compiler = matchRegEx.matches[0, "Compiler"]
-        self.ffmpegCopyright = matchRegEx.matches[0, "FFmpegCopyright"]
+        let version = matchRegEx.matches[0, "Version"]
+        let compiler = matchRegEx.matches[0, "Compiler"]
+        let ffmpegCopyright = matchRegEx.matches[0, "FFmpegCopyright"]
         
         // Retrieve the configuration but remove reference to folders
-        self.configuration = matchRegEx.matches[0, "Configuration"].replacingOccurrences(of: #"--\S+=\/\S+\s+"#, with: "", options: .regularExpression)
+        let configuration = matchRegEx.matches[0, "Configuration"].replacingOccurrences(of: #"--\S+=\/\S+\s+"#, with: "", options: .regularExpression)
                 
+        var libraries: [String : String] = [:]
         for index in 2...matchRegEx.matches.count - 1 {
             let library = matchRegEx.matches[index, "Library"]
             let major = matchRegEx.matches[index, "Major"]
@@ -690,6 +697,8 @@ struct FFmpegVersion: FFmpegOutputHandler {
 
             libraries[library] = "\(major).\(minor).\(build)"
         }
+        
+        self.version = FFmpegVersionStruct(version: version, compiler: compiler, ffmpegCopyright: ffmpegCopyright, configuration: configuration, libraries: libraries)
     }
 }
 

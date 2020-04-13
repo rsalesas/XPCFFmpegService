@@ -98,7 +98,7 @@ public class FFmpegTask {
     
     private func invokeFFmpeg(arguments: [String], handler: FFmpegOutputHandler.Type? = nil) -> ExitCode {
         stdOutConnector = PipeConnector(read: proxyStandardOutputPipe.fileHandleForReading, write: defaultStandardOutput, relayMode: .end, outputHandlerType: handler)
-        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe.fileHandleForReading, write: defaultStandardError, relayMode: .line, outputHandlerType: FFmpegError.self)
+        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe.fileHandleForReading, write: defaultStandardError, relayMode: .line, outputHandlerType: FFmpegStatus.self)
 
         progressConnector = PipeConnector(read: progressPipe.fileHandleForReading, write: defaultStandardError, relayMode: .terminators, outputHandlerType: FFmpegProgress.self)
 
@@ -110,7 +110,7 @@ public class FFmpegTask {
     private func invokeFFprobe(arguments: [String]) -> ExitCode {
         // Passthrough all output from ffprobe untouched
         stdOutConnector = PipeConnector(read: proxyStandardOutputPipe.fileHandleForReading, write: defaultStandardOutput, relayMode: .end)
-        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe.fileHandleForReading, write: defaultStandardError, relayMode: .line, outputHandlerType: FFmpegError.self)
+        stdErrConnector = PipeConnector(read: proxyStandardErrorPipe.fileHandleForReading, write: defaultStandardError, relayMode: .line, outputHandlerType: FFmpegStatus.self)
 
         let cargs = CStringArray([CommandLine.arguments[0]] + FFmpegTask.FFprobeFlags + arguments)
         return ffprobe(Int32(cargs.count), cargs.pointer) == 0 ? ExitCode.success : ExitCode.failure

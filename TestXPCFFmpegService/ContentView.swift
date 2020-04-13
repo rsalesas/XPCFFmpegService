@@ -8,36 +8,46 @@
 
 import SwiftUI
 import XPCFFmpegService
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
-
-public class FFmpegStatusUpdate: XPCFFmpegStatusProtocol {
-    
-    let contentView: ContentView
-    
-    init(contentView: ContentView) {
-        self.contentView = contentView
-    }
-
-    public func progress(progress: String) {
-        print("---------- \(progress)")
-        contentView.string = progress
-    }
-}
 
 
 struct ContentView: View {
     
     weak var ffmpegInvoke: XPCFFmpegInvoke?
     
-    @State var string: String = ""
-    
+    @State var progress: String = ""
+    @State var error: String = ""
+    @State var status: String = ""
+    @State var result: String = ""
+
     var body: some View {
         VStack {
-            Text("\(string)")
+            HStack {
+                Text("Result: ")
+                Text("\(result)")
+            }
+            HStack {
+                Text("Error: ")
+                Text("\(error)")
+            }
+            HStack {
+                Text("Status: ")
+                Text("\(status)")
+            }
+            HStack {
+                Text("Progress: ")
+                Text("\(progress)")
+            }
             Button(action: { self.invoke() }) {
                 Text("Make Uppercase")
             }
-            Button(action: { self.string = "" }) {
+            Button(action: {
+                self.progress = ""
+                self.error = ""
+                self.status = ""
+                self.result = ""
+            }) {
                 Text("Reset")
             }
         }
@@ -56,6 +66,7 @@ struct ContentView: View {
     func invoke() {
         assert(ffmpegInvoke != nil, "Service has not been initiatised")
         ffmpegInvoke?.invoke(request: "-version", globalOptions: [], inputs: [], outputs: [], contentView: self)
+//        ffmpegInvoke?.invoke(request: "-ffprobe", globalOptions: [], inputs: ["-i", "NotAFile"], outputs: [], contentView: self)
     }
 }
 

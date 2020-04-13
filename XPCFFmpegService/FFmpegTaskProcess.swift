@@ -8,21 +8,31 @@
 
 import Foundation
 import SiliconInk_Helper
+import XPCFFmpegServiceFramework
+
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
-public struct JSONError: Codable {
-    let error: FFmpegStatus
-}
+
 
 
 class FFmpegTaskProcess {
     
     public typealias CompletionHandler = (_ result: ServiceResult) -> Void
 
+    private struct StandardErrorResponse: Codable {
+        let status: FFmpegStatus?
+        let progress: FFmpegProgress?
+    }
+    
+    public struct StandardOutputResponse: Codable {
+        let version: FFmpegVersion?
+    }
+
         
     private let mutex = MutexSynchronized()
     private let process = Process()
     private let handler: CompletionHandler
+    private let statusService: XPCFFmpegStatusProtocol
 
     private let stdOutPipe: Pipe
     private let stdOutValidator: JSONStreamValidator
@@ -48,8 +58,17 @@ class FFmpegTaskProcess {
             stdOutValidator.append(data: availableData)
             
             stdOutValidator.forEach { data in
-                assert(data.isValidJSON, "Invalid JSON received from FFmpegTask on StandardOutput.")
-                handler(.success(data))
+                if let response = try? JSONDecoder().decode(StandardOutputResponse.self, from: data) {
+                    if let ffmpegVersion = response.version {
+                        os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
+                        handler(.success(ffmpegVersion))
+
+                    } else {
+                        os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidJSON")
+                        terminateWithError(error: ServiceError.invalidResponse)
+                    }
+
+                }
             }
             
             if let error = stdOutValidator.error, error == .invalid {
@@ -74,17 +93,20 @@ class FFmpegTaskProcess {
             
             stdErrValidator.forEach { data in
                 assert(data.isValidJSON, "Invalid JSON received from FFmpegTask on StandardError.")
-                if let ffmpegProgress = try? JSONDecoder().decode(FFmpegProgress.self, from: data) {
-                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
-                    // TODO: Call the progress handler
+                if let response = try? JSONDecoder().decode(StandardErrorResponse.self, from: data) {
+                    if let ffmpegProgress = response.progress {
+                        os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
+                        statusService.progress(progress: ffmpegProgress.debugDescription)
 
-                } else if let ffmpegError = try? JSONDecoder().decode(JSONError.self, from: data) {
-                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegError")
-                    // TODO: Call the status handler
+                    } else if let ffmpegStatus = response.status {
+                        os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegStatus")
+                        statusService.progress(progress: ffmpegStatus.debugDescription)
 
-                } else {
-                    os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidJSON")
-                    terminateWithError(error: ServiceError.invalidResponse)
+                    } else if !data.isEmptyJSON {
+                        os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidResponse")
+                        terminateWithError(error: ServiceError.invalidResponse)
+                    }
+
                 }
             }
             
@@ -112,11 +134,10 @@ class FFmpegTaskProcess {
     
     init(statusService: XPCFFmpegStatusProtocol, completionHandler handler: @escaping CompletionHandler) {
         os_log("FFmpegTaskProcess.init")
-        
-        // TODO: Remove this
-        statusService.progress(progress: "Test")
-        
+                
         self.handler = handler
+        self.statusService = statusService
+        
         let xpcServicesPath = URL(fileURLWithPath: Bundle.main.executablePath ?! "Invalid state; unable to retrieve bundle executable path").deletingLastPathComponent()
         self.process.executableURL = xpcServicesPath.appendingPathComponent("FFmpegTask")
 
@@ -159,6 +180,9 @@ class FFmpegTaskProcess {
         os_log("FFmpegTaskProcess.invoke")
 
         do {
+            // TODO: Remove this - looks like it doesn't like starting to send on a callback...
+            statusService.progress(progress: "REMOVE THIS: FFmpegTaskProcess.init")
+
             process.arguments = arguments
             try process.run()
 

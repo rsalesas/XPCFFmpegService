@@ -9,8 +9,12 @@
 import Cocoa
 import SwiftUI
 import XPCFFmpegService
-import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
+import XPCFFmpegServiceFramework
 import SiliconInk_Helper
+
+import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
+
+
 
 
 public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate, XPCFFmpegStatusProtocol {
@@ -24,38 +28,33 @@ public class FFmpegStatusUpdateListenerDelegate: XPCAnonymousListenerDelegate, X
     }
     
     public func progress(progress: String) {
-        print("---------- \(progress)")
-        contentView.string = progress
+        os_log("---------- %@", progress)
+        contentView.progress = progress
     }
 
 }
 
 class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
     
-    var contentView: ContentView?
-    
-    private lazy var listener: FFmpegStatusUpdateListenerDelegate = {
-        let listener = FFmpegStatusUpdateListenerDelegate(contentView: contentView!)
-        listener.resume()
-        return listener
-    }()
-
     init() {
         super.init(serviceName: "com.siliconink.XPCFFmpegService", protocol: XPCFFmpegInvokeProtocol.self)
     }
     
     func invoke(request: String, globalOptions: [String], inputs: [String], outputs: [String], contentView: ContentView) {
         
-        self.contentView = contentView
+        var listener: FFmpegStatusUpdateListenerDelegate? = FFmpegStatusUpdateListenerDelegate(contentView: contentView)
+        listener?.resume()
     
-        proxy.invoke(endpoint: listener.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, outputs: outputs) { object, error  in
+        proxy.invoke(endpoint: listener!.endpoint, request: request, globalOptions: globalOptions, inputs: inputs, outputs: outputs) { object, error  in
             os_log("***** MyServiceProxy.invoke->callback")
 
+            listener = nil
+            
             if object is Data {
                 let data = object as! Data
-                contentView.string = String(data: data, encoding: .utf8) ?? "<Error encoding to .utf8>"
+                contentView.result = String(data: data, encoding: .utf8) ?? "<Error encoding to .utf8>"
             } else if let error = error {
-                contentView.string = error.localizedDescription
+                contentView.error = error.localizedDescription
             }
         }
     }

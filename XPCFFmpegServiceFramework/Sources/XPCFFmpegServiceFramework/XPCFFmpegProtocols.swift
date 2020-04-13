@@ -28,7 +28,7 @@ public enum ServiceError : Int32, Error, Codable {
     case invalidResponse = 6
     case unableToInvoke = 7
     
-    internal init (exitCode: Int32) {
+    public init (exitCode: Int32) {
         if exitCode == 0 {
             fatalError("ServiceError cannot be created with exitCode value \"0\".")
         } else if exitCode < 1 || exitCode > 4 {
@@ -79,6 +79,42 @@ public enum ServiceError : Int32, Error, Codable {
     var speed: Int?
     var finished: Bool
 }
+
+//@objc public class FFmpegVersion: NSObject, Codable {
+//    public let version: String
+//    public let compiler: String
+//    public let ffmpegCopyright: String
+//    public let configuration: String
+//    public var libraries: [String : String] = [:]
+//}
+
+@objc public class FFmpegVersion: NSObject, NSSecureCoding, Codable {
+    public let version: String
+    public let compiler: String
+    public let ffmpegCopyright: String
+    public let configuration: String
+    public var libraries: [String : String] = [:]
+    
+    public static var supportsSecureCoding: Bool {
+      return true
+    }
+    
+    public func encode(with coder: NSCoder) {
+        coder.encode(version as NSString, forKey: "version")
+        coder.encode(compiler as NSString, forKey: "compiler")
+        coder.encode(ffmpegCopyright as NSString, forKey: "ffmpegCopyright")
+        coder.encode(configuration as NSString, forKey: "configuration")
+    }
+    
+    public required init?(coder: NSCoder) {
+        version = coder.decodeObject(of: NSString.self, forKey: "version") as String? ?? ""
+        compiler = coder.decodeObject(of: NSString.self, forKey: "compiler") as String? ?? ""
+        ffmpegCopyright = coder.decodeObject(of: NSString.self, forKey: "ffmpegCopyright") as String? ?? ""
+        configuration = coder.decodeObject(of: NSString.self, forKey: "configuration") as String? ?? ""
+        libraries = [:]
+    }
+}
+
 
 @objc public protocol XPCFFmpegStatusProtocol {
 
