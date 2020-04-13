@@ -53,6 +53,10 @@ class XPCFFmpegInvoke: XPCServiceProxy<XPCFFmpegInvokeProtocol> {
             if object is Data {
                 let data = object as! Data
                 contentView.result = String(data: data, encoding: .utf8) ?? "<Error encoding to .utf8>"
+            } else if object is String {
+                let string = object as! String
+                contentView.result = string
+
             } else if let error = error {
                 contentView.error = error.localizedDescription
             }

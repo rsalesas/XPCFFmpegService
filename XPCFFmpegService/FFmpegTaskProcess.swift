@@ -61,7 +61,8 @@ class FFmpegTaskProcess {
                 if let response = try? JSONDecoder().decode(StandardOutputResponse.self, from: data) {
                     if let ffmpegVersion = response.version {
                         os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->FFmpegProgress")
-                        handler(.success(ffmpegVersion))
+//                        handler(.success(ffmpegVersion))
+                        handler(.success("Success!"))
 
                     } else {
                         os_log("    FFmpegTaskProcess.stdErrRetrieveAndCallHandler->InvalidJSON")
