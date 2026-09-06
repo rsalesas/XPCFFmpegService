@@ -27,19 +27,72 @@ public enum ServiceError : Int32, Error, Codable {
     case uncaughtSignal = 5                 // XPCFFmpegService failures
     case invalidResponse = 6
     case unableToInvoke = 7
-    
+    case cancelled = 8                      // The caller asked for the job to be abandoned
+    case hardExit = 9                       // ffmpeg bailed out of its own signal handler
+    case inaccessibleFile = 10             // A file could not be opened for the job
+    case unexpectedExit = 11                // An exit code outside anything we know how to name
+
+    /// Maps a child process exit status onto a ServiceError.
+    ///
+    /// FFmpegTask normalises its own failures to 1...4 (see FFmpegTask.ExitCode), but it is not
+    /// the only thing that can set the exit status. ffmpeg's sigterm_handler calls exit(123)
+    /// directly once it has seen more than three signals, bypassing FFmpegTask entirely, and
+    /// ffmpeg's main() returns 255 when it stops because of a signal. Neither can be allowed to
+    /// trap here - this runs inside the XPC service, so a fatalError on an unexpected code takes
+    /// the service down along with every other conversion it is hosting.
     public init (exitCode: Int32) {
-        if exitCode == 0 {
-            fatalError("ServiceError cannot be created with exitCode value \"0\".")
-        } else if exitCode < 1 || exitCode > 4 {
-            fatalError("ServiceError can only be created with exitCode values between \"1\" and \"4\" inclusive.")
-        } else {
-            self.init(rawValue: exitCode)!
+        switch exitCode {
+        case 1...4:
+            self = ServiceError(rawValue: exitCode) ?? .unexpectedExit
+
+        case 123:
+            // fftools/ffmpeg.c: "Received > 3 system signals, hard exiting"
+            self = .hardExit
+
+        case 255:
+            // fftools/ffmpeg.c main(): ret = received_nb_signals ? 255 : ...
+            self = .uncaughtSignal
+
+        default:
+            self = .unexpectedExit
         }
     }
 }
 
-@objc public class FFmpegStatus: NSObject, Error, Codable {
+/// Errors are bridged to NSError on their way across the connection, so without this the caller
+/// only ever sees "The operation couldn't be completed. (ServiceError error 11.)".
+extension ServiceError: LocalizedError, CustomNSError {
+
+    public static var errorDomain: String {
+        return "com.siliconink.XPCFFmpegService.ServiceError"
+    }
+
+    public var errorCode: Int {
+        return Int(rawValue)
+    }
+
+    public var errorUserInfo: [String : Any] {
+        return [NSLocalizedDescriptionKey : errorDescription ?? "Unknown error"]
+    }
+
+    public var errorDescription: String? {
+        switch self {
+        case .failure:               return "FFmpeg was unable to complete the operation."
+        case .insufficientArguments: return "Not enough arguments were supplied for the request."
+        case .invalidArgument:       return "One or more of the supplied arguments is not permitted."
+        case .unknownRequest:        return "The request is not one FFmpegTask knows how to service."
+        case .uncaughtSignal:        return "FFmpegTask was stopped by a signal."
+        case .invalidResponse:       return "FFmpegTask sent a response that could not be understood."
+        case .unableToInvoke:        return "FFmpegTask could not be launched."
+        case .cancelled:             return "The operation was cancelled."
+        case .hardExit:              return "FFmpeg stopped responding to termination requests and exited abruptly."
+        case .inaccessibleFile:      return "A file needed for the operation could not be opened."
+        case .unexpectedExit:        return "FFmpegTask exited with an unrecognised status."
+        }
+    }
+}
+
+@objc public class FFmpegStatus: NSObject, NSSecureCoding, Codable, LocalizedError {
     
     public enum Domain: String, Codable {
         case unkown
@@ -59,34 +112,104 @@ public enum ServiceError : Int32, Error, Codable {
     public let message: String
     public let indent: Int
     
-    public var localizedDescription: String {
+    // Previously a stored-property-style `localizedDescription`, which shadows rather than
+    // satisfies Error's - so nothing that went through Error ever saw it.
+    public var errorDescription: String? {
         return "The operation could not be completed (\(self.domain): \(self.message))"
     }
 
+    public override var description: String {
+        return "\(self.domain): \(self.message)"
+    }
+
+    public static var supportsSecureCoding: Bool {
+        return true
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(domain.rawValue as NSString, forKey: "domain")
+        coder.encode(message as NSString, forKey: "message")
+        coder.encode(indent, forKey: "indent")
+    }
+
+    public required init?(coder: NSCoder) {
+        let rawDomain = coder.decodeObject(of: NSString.self, forKey: "domain") as String? ?? ""
+        domain = Domain(rawValue: rawDomain) ?? .unkown
+        message = coder.decodeObject(of: NSString.self, forKey: "message") as String? ?? ""
+        indent = coder.decodeInteger(forKey: "indent")
+    }
 }
 
-@objc public class FFmpegProgress: NSObject, Codable {
-    var frame: Int
-    var fps: Double
-    var input: Int
-    var stream: Int
-    var quality: Double
-    var bitrate: Double?
-    var totalSize: Int?
-    var outTime: TimeInterval?
-    var duplicateFrames: Int
-    var droppedFrames: Int
-    var speed: Int?
-    var finished: Bool
-}
+@objc public class FFmpegProgress: NSObject, NSSecureCoding, Codable {
+    public var frame: Int
+    public var fps: Double
+    public var input: Int
+    public var stream: Int
+    public var quality: Double
+    public var bitrate: Double?
+    public var totalSize: Int?
+    public var outTime: TimeInterval?
+    public var duplicateFrames: Int
+    public var droppedFrames: Int
+    public var speed: Int?
+    public var finished: Bool
 
-//@objc public class FFmpegVersion: NSObject, Codable {
-//    public let version: String
-//    public let compiler: String
-//    public let ffmpegCopyright: String
-//    public let configuration: String
-//    public var libraries: [String : String] = [:]
-//}
+    public override var description: String {
+        var parts = ["frame \(frame)", String(format: "%.1f fps", fps)]
+
+        if let outTime = outTime {
+            parts.append(String(format: "%.2fs", outTime))
+        }
+        if let bitrate = bitrate {
+            parts.append(String(format: "%.1f kbits/s", bitrate))
+        }
+        if let totalSize = totalSize {
+            parts.append("\(totalSize) bytes")
+        }
+        if droppedFrames > 0 {
+            parts.append("\(droppedFrames) dropped")
+        }
+        if finished {
+            parts.append("finished")
+        }
+
+        return parts.joined(separator: ", ")
+    }
+
+    public static var supportsSecureCoding: Bool {
+        return true
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(frame, forKey: "frame")
+        coder.encode(fps, forKey: "fps")
+        coder.encode(input, forKey: "input")
+        coder.encode(stream, forKey: "stream")
+        coder.encode(quality, forKey: "quality")
+        coder.encode(bitrate.map { NSNumber(value: $0) }, forKey: "bitrate")
+        coder.encode(totalSize.map { NSNumber(value: $0) }, forKey: "totalSize")
+        coder.encode(outTime.map { NSNumber(value: $0) }, forKey: "outTime")
+        coder.encode(duplicateFrames, forKey: "duplicateFrames")
+        coder.encode(droppedFrames, forKey: "droppedFrames")
+        coder.encode(speed.map { NSNumber(value: $0) }, forKey: "speed")
+        coder.encode(finished, forKey: "finished")
+    }
+
+    public required init?(coder: NSCoder) {
+        frame = coder.decodeInteger(forKey: "frame")
+        fps = coder.decodeDouble(forKey: "fps")
+        input = coder.decodeInteger(forKey: "input")
+        stream = coder.decodeInteger(forKey: "stream")
+        quality = coder.decodeDouble(forKey: "quality")
+        bitrate = coder.decodeObject(of: NSNumber.self, forKey: "bitrate")?.doubleValue
+        totalSize = coder.decodeObject(of: NSNumber.self, forKey: "totalSize")?.intValue
+        outTime = coder.decodeObject(of: NSNumber.self, forKey: "outTime")?.doubleValue
+        duplicateFrames = coder.decodeInteger(forKey: "duplicateFrames")
+        droppedFrames = coder.decodeInteger(forKey: "droppedFrames")
+        speed = coder.decodeObject(of: NSNumber.self, forKey: "speed")?.intValue
+        finished = coder.decodeBool(forKey: "finished")
+    }
+}
 
 @objc public class FFmpegVersion: NSObject, NSSecureCoding, Codable {
     public let version: String
@@ -104,6 +227,7 @@ public enum ServiceError : Int32, Error, Codable {
         coder.encode(compiler as NSString, forKey: "compiler")
         coder.encode(ffmpegCopyright as NSString, forKey: "ffmpegCopyright")
         coder.encode(configuration as NSString, forKey: "configuration")
+        coder.encode(libraries as NSDictionary, forKey: "libraries")
     }
     
     public required init?(coder: NSCoder) {
@@ -111,29 +235,129 @@ public enum ServiceError : Int32, Error, Codable {
         compiler = coder.decodeObject(of: NSString.self, forKey: "compiler") as String? ?? ""
         ffmpegCopyright = coder.decodeObject(of: NSString.self, forKey: "ffmpegCopyright") as String? ?? ""
         configuration = coder.decodeObject(of: NSString.self, forKey: "configuration") as String? ?? ""
-        libraries = [:]
+        libraries = coder.decodeObject(of: [NSDictionary.self, NSString.self], forKey: "libraries") as? [String : String] ?? [:]
     }
 }
 
 
+/// One ffmpeg/ffprobe invocation.
+///
+/// `arguments` is the command line after the verb. Wherever FFmpegTask needs a descriptor number,
+/// the client leaves a token, and the service replaces it with the number that descriptor was
+/// given in the child.
+///
+/// File access travels as open descriptors, not as paths or bookmarks, because a descriptor is the
+/// only thing that survives the two process hops from the app, through this service, to FFmpegTask.
+/// A sandbox extension is a right that has to be exercised by whoever opens the file: it can cross
+/// one hop and not two, and an app-scoped bookmark cannot even be resolved outside the app that
+/// made it. A descriptor is access already exercised, so it travels as far as it is passed.
+@objc public final class FFmpegRequest: NSObject, NSSecureCoding {
+
+    /// A placeholder for a descriptor number in `arguments`.
+    public static let tokenPrefix = "\u{1}xpcffmpeg.fd."
+    public static let tokenTerminator: Character = "\u{1}"
+
+    public static func token(for id: UUID = UUID()) -> String {
+        return "\(tokenPrefix)\(id.uuidString)\(tokenTerminator)"
+    }
+
+    /// The FFmpegTask request verb: "-ffmpeg", "-ffprobe", "-codecs", "-version", and so on.
+    public let request: String
+
+    /// The full argument vector after the verb, with descriptor tokens where numbers belong.
+    public let arguments: [String]
+
+    public init(request: String, arguments: [String]) {
+        self.request = request
+        self.arguments = arguments
+    }
+
+    public static var supportsSecureCoding: Bool {
+        return true
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(request as NSString, forKey: "request")
+        coder.encode(arguments as NSArray, forKey: "arguments")
+    }
+
+    public required init?(coder: NSCoder) {
+        guard let request = coder.decodeObject(of: NSString.self, forKey: "request") as String?,
+              let arguments = coder.decodeObject(of: [NSArray.self, NSString.self], forKey: "arguments") as? [String]
+        else {
+            return nil
+        }
+
+        self.request = request
+        self.arguments = arguments
+    }
+}
+
+
+/// Out-of-band updates for a job in flight, delivered to the anonymous listener the caller passes
+/// into invoke(). These carry the decoded objects rather than a rendered string: the service has
+/// already parsed FFmpegTask's JSON, and flattening it to text at that point threw the numbers away
+/// before the caller ever saw them.
 @objc public protocol XPCFFmpegStatusProtocol {
 
-    func progress(progress: String)
+    @objc(reportProgress:)
+    func progress(progress: FFmpegProgress)
+
+    @objc(reportStatus:)
+    func status(status: FFmpegStatus)
 
 }
 
 
 @objc public protocol XPCFFmpegInvokeProtocol {
-    
-    func invoke(endpoint: NSXPCListenerEndpoint, request: String, globalOptions: [String], inputs: [String], filters: [String], outputs: [String], url: Data, reply handler: @escaping (CompletionHandler))
+
+    /// Starts a job. `jobID` is chosen by the caller rather than handed back in the reply so that
+    /// a cancel can be issued at any point after the call is made - including before the service
+    /// has got as far as spawning anything.
+    /// - Parameters:
+    ///   - fileTokens: the tokens in `request.arguments`, in the same order as `fileHandles`.
+    ///   - fileHandles: descriptors the caller has already opened. NSXPC transfers the descriptor
+    ///     itself, which is what carries the access; nothing else about the file is sent.
+    @objc(invokeJob:endpoint:request:fileTokens:fileHandles:reply:)
+    func invoke(jobID: String, endpoint: NSXPCListenerEndpoint, request: FFmpegRequest, fileTokens: [String], fileHandles: [FileHandle], reply handler: @escaping (CompletionHandler))
+
+    /// Asks the service to abandon `jobID`. The outcome is delivered through that job's original
+    /// invoke reply as ServiceError.cancelled; unknown or already-finished job IDs are ignored.
+    @objc(cancelJob:)
+    func cancel(jobID: String)
 
 }
 
 
-@objc public protocol XPCFFmpegServiceProtocol {
-    
+/// Pre-configured NSXPCInterfaces for the protocols above.
+///
+/// Both ends of a connection have to agree on these, so they are built here rather than with a
+/// bare NSXPCInterface(with:) at each call site. The invoke reply passes `Any?` (ffprobe returns
+/// arbitrary JSON), and NSXPCConnection silently refuses to decode any class it has not been
+/// explicitly told to expect - so every container and leaf type JSONSerialization can produce has
+/// to be whitelisted here. The status interface needs no such treatment: its arguments are
+/// concrete NSSecureCoding classes, which NSXPCInterface works out from the signature.
+public enum XPCFFmpegInterfaces {
 
+    public static let invokeSelector = NSSelectorFromString("invokeJob:endpoint:request:fileTokens:fileHandles:reply:")
+
+    public static var invoke: NSXPCInterface {
+        let interface = NSXPCInterface(with: XPCFFmpegInvokeProtocol.self)
+
+        let replyClasses = NSSet(array: [
+            NSDictionary.self, NSArray.self, NSString.self, NSNumber.self,
+            NSData.self, NSDate.self, NSNull.self, FFmpegVersion.self
+        ]) as! Set<AnyHashable>
+
+        interface.setClasses(replyClasses, for: invokeSelector, argumentIndex: 0, ofReply: true)
+
+        let handleClasses = NSSet(array: [NSArray.self, FileHandle.self]) as! Set<AnyHashable>
+        interface.setClasses(handleClasses, for: invokeSelector, argumentIndex: 4, ofReply: false)
+
+        return interface
+    }
+
+    public static var status: NSXPCInterface {
+        return NSXPCInterface(with: XPCFFmpegStatusProtocol.self)
+    }
 }
-
-
-

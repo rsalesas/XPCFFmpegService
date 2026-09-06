@@ -1,0 +1,51 @@
+NOTICE
+======
+
+The source in this repository is MIT licensed — see LICENSE. That covers every first-party file
+here: the XPCFFmpeg package, the XPC service, the frameworks, the shared Support sources,
+FFmpegTask's own Swift and Objective-C, the sample app, the tests, the scripts and the
+documentation.
+
+Three things are not covered by it, and one of them matters when you ship.
+
+
+FFmpeg is a submodule, not part of this repository
+--------------------------------------------------
+
+`FFmpeg/` is a git submodule. Clone without `--recursive` and it is not there at all. Its contents
+are licensed by the FFmpeg project, not by this one, and how they are licensed depends on how you
+configure the build.
+
+The configuration used here — see the *Make FFmpeg* build phase — passes `--enable-gpl` and
+`--enable-version3`, which makes the resulting FFmpeg libraries **GPL v3**. Without those flags
+FFmpeg builds under the LGPL.
+
+
+x264 and x265 are fetched at build time
+---------------------------------------
+
+The build copies `libx264.a` and `libx265.a` out of Homebrew. They are **GPL v2 or later**, are not
+redistributed in this repository, and are only present if you build with `--enable-libx264` and
+`--enable-libx265`.
+
+
+A built FFmpegTask binary is GPL v3
+-----------------------------------
+
+This is the one that has consequences. FFmpegTask statically links FFmpeg, x264 and x265, so the
+**binary** is a combined work and must be distributed under the GPL — regardless of the MIT licence
+on the sources that went into it. Shipping `XPCFFmpegService.xpc` inside an application means
+distributing that binary, with the obligations that carries: preserve the notices, ship the licence
+text, and make the corresponding source available. This repository, being public, is that source.
+
+Nothing else built from this repository contains FFmpeg code. The application, the XPC service and
+`XPCFFmpeg.framework` have zero FFmpeg symbols, which you can check for yourself:
+
+    nm -U YourApp.app/Contents/MacOS/YourApp | grep -cE '_av_|_avcodec_|_x264_|_x265_'   # 0
+
+That separation is deliberate, and it is why an application using this service does not have to
+publish its own source. The reasoning is in FFmpegTask/README.md.
+
+If you would rather not ship GPL code at all, build FFmpeg without `--enable-gpl`,
+`--enable-version3`, `--enable-libx264` and `--enable-libx265`, and use the VideoToolbox encoders.
+The MIT sources here are unchanged by that choice; only what they link against changes.

@@ -35,6 +35,18 @@ class MatchRegularExpression {
             return range != nil
         }
         
+        /// Non-trapping lookup. Optional groups in the ffmpeg output patterns routinely fail to
+        /// participate in a match - that is not an error, it just means ffmpeg did not emit that
+        /// field in this particular report - so the caller needs a way to ask without trapping.
+        public func value(_ index: Int, _ group: String) -> String? {
+            precondition(index >= 0 && index < matches.count, "Index out of range")
+            guard let range = Range(matches[index].range(withName: group), in: output) else {
+                return nil
+            }
+
+            return String(output[range])
+        }
+
         public subscript(index: Int, group: String) -> String {
             get {
                 precondition(index >= 0 && index < matches.count, "Index out of range")
@@ -59,7 +71,7 @@ class MatchRegularExpression {
         
         internal init(from: String, regEx: NSRegularExpression, matchingOptions: NSRegularExpression.MatchingOptions) {
             self.output = from
-            self.matches = regEx.matches(in: output, options: matchingOptions, range: NSMakeRange(0, output.count))
+            self.matches = regEx.matches(in: output, options: matchingOptions, range: NSMakeRange(0, output.utf16.count))
         }
     }
     

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
@@ -32,7 +31,7 @@ class PipeConnector {
 
     public var data: Data {
         get {
-            return mutex.synchronize(buffer)
+            return mutex.synchronize { buffer }
         }
     }
         
@@ -60,7 +59,7 @@ class PipeConnector {
         mutex.synchronize {
             self.readFh.readabilityHandler = nil
             
-            if let availableData = readFh.availableData(timeout: 0) {
+            if let availableData = try? readFh.availableData(timeout: 0) {
                 appendAvailableDataToBuffer(data: availableData)
             }
             
@@ -68,24 +67,44 @@ class PipeConnector {
         }
     }
     
+    /// stderr carries two connectors - status lines and progress records - writing to the same
+    /// descriptor. A frame split across two interleaved writes would desynchronise the reader for
+    /// good, so every frame goes out under one lock, whole.
+    private static let writeLock = MutexSynchronized()
+
     private func write(data: Data) {
         if !data.isEmpty {
+            // Relay what FFmpeg actually printed, instead of what the output handler made of it.
+            // This is how FFmpegTaskTests' fixtures are captured - see Scripts/ffmpeg-fixtures.sh.
+            // Those fixtures have to be real FFmpeg output: hand-written samples would encode
+            // someone's reading of the format and would have gone on passing while -pix_fmts and
+            // -filters parsed nothing at all. Unframed on purpose, so the capture is exactly what
+            // FFmpeg wrote. Never set in production.
+            if ProcessInfo.processInfo.environment["FFMPEGTASK_CAPTURE_RAW"] != nil {
+                PipeConnector.writeLock.synchronize { writeFh.write(data) }
+                return
+            }
+
+            let payload: Data
+
             if let outputHandlerType = self.outputHandlerType {
                 guard let outputHandler = outputHandlerType.init(from: data) else {
                     return
                 }
-        
-                writeFh.write(outputHandler.JSON)
-                
+                payload = outputHandler.JSON
+
             } else {
-                writeFh.write(buffer)
+                payload = buffer
             }
+
+            guard let framed = PipeFraming.frame(payload) else { return }
+            PipeConnector.writeLock.synchronize { writeFh.write(framed) }
         }
     }
 
     private func readabilityHandler(fileHandle: FileHandle) {
         mutex.synchronize {
-            if let availableData = readFh.availableData(timeout: 0) {
+            if let availableData = try? readFh.availableData(timeout: 0) {
                 if availableData.isEmpty {
                     self.readFh.readabilityHandler = nil
                 } else {

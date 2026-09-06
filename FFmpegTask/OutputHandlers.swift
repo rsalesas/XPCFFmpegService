@@ -9,7 +9,6 @@
 
 
 import Foundation
-import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
@@ -61,7 +60,7 @@ struct FFmpegStatus: FFmpegOutputHandler {
         public let indent: Int
     }
 
-    private static let RegExPattern = #"(?:^.*\[(?<Domain>(?:info)|(?:error)|(?:warning))\]\s(?<Indent>\s*)(?:\:\s)*(?<Message>.*?)\s*$)|(?:^(?<oslog>(?<oslogtimestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{6}\+\d{4})(?:\s)(?<oslogprocess>\S*)\s(?<oslogmessage>.*))$)|(?:^(?<Unknown>.*)$)"#
+    static let RegExPattern = #"(?:^.*\[(?<Domain>(?:info)|(?:error)|(?:warning))\]\s(?<Indent>\s*)(?:\:\s)*(?<Message>.*?)\s*$)|(?:^(?<oslog>(?<oslogtimestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{6}\+\d{4})(?:\s)(?<oslogprocess>\S*)\s(?<oslogmessage>.*))$)|(?:^(?<Unknown>.*)$)"#
 
     /*
      
@@ -139,7 +138,7 @@ struct FFmpegStatus: FFmpegOutputHandler {
 
 struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
     
-    private static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
+    static let RegExPattern = #"(?:frame=(?<Frame>\d+)\n)?(?:(?:.*\n)*fps=(?<Fps>[\d\.]+)\n)?(?:(?:.*\n)*(?:stream_(?<Input>\d)_(?<Stream>\d)_q)=(?<Quality>[-\d\.]+)\n)?(?:(?:.*\n)*bitrate=\s*(?<Bitrate>[\d\.]+)kbits\/s\n)?(?:(?:.*\n)*total_size=(?<TotalSize>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*out_time_ms=(?<OutTime>(?:\d+)|(?:.*))\n)?(?:(?:.*\n)*dup_frames=(?<DuplicateFrames>\d+)\n)?(?:(?:.*\n)*drop_frames=(?<DroppedFrames>\d+)\n)?(?:(?:.*\n)*speed=\s*(?<Speed>(?:[\d\.]+)|(?:.*))x?\n)?(?:(?:.*\n)*progress\s*=\s*(?<Progress>(?:continue)|(?:end)))\s*"#
 
     struct FFmpegProgressStruct: Encodable {
         var frame: Int
@@ -171,29 +170,39 @@ struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
             return nil
         }
         
-        // The following must be included and convert properly
-        guard let frame = Int(matchRegEx.matches[0, "Frame"]), let fps = Double(matchRegEx.matches[0, "Fps"]),
-            let input = Int(matchRegEx.matches[0, "Input"]), let stream = Int(matchRegEx.matches[0, "Stream"]),
-            let quality = Double(matchRegEx.matches[0, "Quality"]), let duplicateFrames = Int(matchRegEx.matches[0, "DuplicateFrames"]),
-            let droppedFrames = Int(matchRegEx.matches[0, "DroppedFrames"])
+        // Every one of these groups is optional in the pattern, and ffmpeg genuinely omits some of
+        // them: the reports it emits before encoding has started carry no stream_N_N_q at all, so
+        // Input/Stream/Quality do not participate in the match. Reading those through the trapping
+        // subscript killed the whole task on the first such report - which is what happens as soon
+        // as a transcode is slow to get going (-re, a large input, a heavy preset). An unparseable
+        // progress report is not fatal; skip it and let the conversion carry on.
+        let m = matchRegEx.matches
+        guard let frame = m.value(0, "Frame").flatMap({ Int($0) }),
+            let fps = m.value(0, "Fps").flatMap({ Double($0) }),
+            let input = m.value(0, "Input").flatMap({ Int($0) }),
+            let stream = m.value(0, "Stream").flatMap({ Int($0) }),
+            let quality = m.value(0, "Quality").flatMap({ Double($0) }),
+            let duplicateFrames = m.value(0, "DuplicateFrames").flatMap({ Int($0) }),
+            let droppedFrames = m.value(0, "DroppedFrames").flatMap({ Int($0) })
              else {
-            fatalError("Invalid ffmpeg progress output; unexpected format")
+            os_log("Incomplete ffmpeg progress report; skipping", type: OSLogType.debug)
+            return nil
         }
         
-        // The following must be included but could convert to "N/A" in which case we leave them nil
-        let bitrate = Double(matchRegEx.matches[0, "Bitrate"])
-        let totalSize = Int(matchRegEx.matches[0, "TotalSize"])
-        let ms = TimeInterval(matchRegEx.matches[0, "OutTime"])
-        let speed = Int(matchRegEx.matches[0, "Speed"])
+        // The following may be present but read "N/A", in which case we leave them nil
+        let bitrate = m.value(0, "Bitrate").flatMap { Double($0) }
+        let totalSize = m.value(0, "TotalSize").flatMap { Int($0) }
+        let ms = m.value(0, "OutTime").flatMap { TimeInterval($0) }
+        let speed = m.value(0, "Speed").flatMap { Int($0) }
         
-        self.progress = FFmpegProgressStruct(frame: frame, fps: fps, input: input, stream: stream, quality: quality, bitrate: bitrate, totalSize: totalSize, outTime: ms == nil ? nil : ms! / 1000000.0, duplicateFrames: duplicateFrames, droppedFrames: droppedFrames, speed: speed, finished: matchRegEx.matches[0, "Progress"] == "end")
+        self.progress = FFmpegProgressStruct(frame: frame, fps: fps, input: input, stream: stream, quality: quality, bitrate: bitrate, totalSize: totalSize, outTime: ms == nil ? nil : ms! / 1000000.0, duplicateFrames: duplicateFrames, droppedFrames: droppedFrames, speed: speed, finished: m.value(0, "Progress") == "end")
     }
     
 }
 
 
 struct FFmpegCodecs: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s(?<Support>[DEVASILS\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -codecs
+    static let RegExPattern = #"^\s(?<Support>[DEVASILS\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -codecs
 
     /*
      Values for "Support"
@@ -253,7 +262,7 @@ struct FFmpegCodecs: FFmpegOutputHandler {
 
 
 struct FFmpegBitstreamFilters: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?<Filter>(?!Bitstream filters:)\S+)$"#  // -bsfs
+    static let RegExPattern = #"^(?<Filter>(?!Bitstream filters:)\S+)$"#  // -bsfs
     
     public let bitstreamFilters: [String]
     
@@ -276,7 +285,7 @@ struct FFmpegBitstreamFilters: FFmpegOutputHandler {
 
 
 struct FFmpegColors: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?:(?<Name>(?!name)\S+)\s+(?<RGB>(?!#RRGGBB)\S+))$"#  // -colors
+    static let RegExPattern = #"^(?:(?<Name>(?!name)\S+)\s+(?<RGB>(?!#RRGGBB)\S+))$"#  // -colors
 
     // TODO: Consider an encodable color, but really, it doesn't matter as all we're doing here is formatting for output
     //       For the other side, the caller, we should make it decode to a Color type of some sort
@@ -308,7 +317,7 @@ struct FFmpegColors: FFmpegOutputHandler {
 
 
 struct FFmpegDecoders: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s(?<Support>[VASFXBD\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -decoders
+    static let RegExPattern = #"^\s(?<Support>[VASFXBD\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -decoders
 
     /*
      Values for "Support"
@@ -368,14 +377,15 @@ struct FFmpegDecoders: FFmpegOutputHandler {
 
 
 struct FFmpegFilters: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s(?<Support>[TSCAVNI\.]{3})\s+(?<Filter>\S+)\s+(?<Workflow>\S+)\s+(?<Description>.+)$"#  // -filters
+    // FFmpeg prints " %c%c %-17s %-10s %s" (fftools/opt_common.c, show_filters): two flag
+    // characters. The command-support column that used to make a third is gone.
+    static let RegExPattern = #"^\s(?<Support>[TS\.]{2})\s+(?<Filter>\S+)\s+(?<Workflow>\S+)\s+(?<Description>.+)$"#  // -filters
 
     /*
      Values for "Support"
      
-     T.. = Timeline support
-     .S. = Slice threading
-     ..C = Command support
+     T. = Timeline support
+     .S = Slice threading
      A = Audio input/output
      V = Video input/output
      N = Dynamic number and/or type of input/output
@@ -385,7 +395,6 @@ struct FFmpegFilters: FFmpegOutputHandler {
     enum Support : String, Encodable {
         case timeline
         case slice
-        case command
     }
     
     struct Filter: Encodable {
@@ -411,7 +420,8 @@ struct FFmpegFilters: FFmpegOutputHandler {
             let workflow = matchRegEx.matches[index, "Workflow"]
             let support = Array(matchRegEx.matches[index, "Support"])
 
-            let supportFlags: [Support] = (support[0] == "T" ? [.timeline] : []) + ((support[1] == "S") ? [.slice] : []) + ((support[2] == "C") ? [.command] : [])
+            let supportFlags: [Support] = (support.first == "T" ? [.timeline] : [])
+                + (support.count > 1 && support[1] == "S" ? [.slice] : [])
              
             filters.append(Filter(filter: filter, description: description, workflow: workflow, support: supportFlags))
         }
@@ -422,11 +432,16 @@ struct FFmpegFilters: FFmpegOutputHandler {
 
 
 struct FFmpegFormats: FFmpegOutputHandler {
-    private static let RegExPattern = #"^\s{1,2}(?<Support>[DE\s]{2})\s+(?<Format>\S+)\s+(?<Description>.+)$"#  // -formats, -demuxers, -muxers, -devices
+    // FFmpeg prints " %c%c%s %-15s %s" (show_formats_devices), where the third field is "d" for a
+    // device and "." otherwise - except under -devices, where it is omitted entirely. So the flag
+    // field is three characters for -formats/-muxers/-demuxers and two for -devices, and {2,3}
+    // covers both. The old {2} silently dropped every device row from the first three.
+    static let RegExPattern = #"^\s(?<Support>[DEd\s]{2,3})\s(?<Format>\S+)\s+(?<Description>.+)$"#  // -formats, -demuxers, -muxers, -devices
     
     enum Support : String, Encodable {
         case muxing
         case demuxing
+        case device
     }
     
     struct Format: Encodable {
@@ -450,7 +465,9 @@ struct FFmpegFormats: FFmpegOutputHandler {
             let description = matchRegEx.matches[index, "Description"]
             let support = Array(matchRegEx.matches[index, "Support"])
             
-            let supportFlags: [Support] = (support[0] == "D" ? [.demuxing] : []) + ((support[1] == "E") ? [.muxing] : [])
+            let supportFlags: [Support] = (support.first == "D" ? [.demuxing] : [])
+                + (support.count > 1 && support[1] == "E" ? [.muxing] : [])
+                + (support.count > 2 && support[2] == "d" ? [.device] : [])
             
             formats.append(Format(format: format, description: description, support: supportFlags))
         }
@@ -461,7 +478,7 @@ struct FFmpegFormats: FFmpegOutputHandler {
 
 
 struct FFmpegLayouts: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?:(?<Individual>Individual)|(?<Standard>Standard))+|^(?:(?<Name>(?!NAME|Individual|Standard)\S+)\s+(?<Description>(?!DESCRIPTION).+))$"#  // -layouts, a bit different in that Individual/Standard are states
+    static let RegExPattern = #"^(?:(?<Individual>Individual)|(?<Standard>Standard))+|^(?:(?<Name>(?!NAME|Individual|Standard)\S+)\s+(?<Description>(?!DESCRIPTION).+))$"#  // -layouts, a bit different in that Individual/Standard are states
     
     struct Layout: Encodable {
         let name: String
@@ -529,7 +546,10 @@ struct FFmpegLicense: FFmpegOutputHandler {
 
 
 struct FFmpegPixelFormats: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?<Support>[IOHPB\.]{5})\s+(?<Filter>\S+)\s+(?<Components>\d+)\s+(?<BitsPerPixel>\d+)$"#  // -pix_fmts
+    // FFmpeg prints "%c%c%c%c%c %-16s       %d            %3d      %d[-%d...]" (show_pix_fmts):
+    // the trailing BIT_DEPTHS column is what the old $-anchor here rejected, silently, on every
+    // single line.
+    static let RegExPattern = #"^(?<Support>[IOHPB\.]{5})\s+(?<Filter>\S+)\s+(?<Components>\d+)\s+(?<BitsPerPixel>\d+)\s+(?<BitDepths>\d+(?:-\d+)*)$"#  // -pix_fmts
 
     /*
      Values for "Support"
@@ -553,6 +573,8 @@ struct FFmpegPixelFormats: FFmpegOutputHandler {
         let filter: String
         let components: Int
         let bitsPerPixel: Int
+        /// Per-component bit depths as ffmpeg reports them, e.g. "8-8-8".
+        let bitDepths: String
         let support: [Support]
     }
     
@@ -568,15 +590,16 @@ struct FFmpegPixelFormats: FFmpegOutputHandler {
         
         for index in 0...matchRegEx.matches.count - 1 {
             let filter = matchRegEx.matches[index, "Filter"]
-            let components = Int(matchRegEx.matches[index, "Components"])!
-            let bitsPerPixel = Int(matchRegEx.matches[index, "BitsPerPixel"])!
+            let components = Int(matchRegEx.matches[index, "Components"]) ?? 0
+            let bitsPerPixel = Int(matchRegEx.matches[index, "BitsPerPixel"]) ?? 0
+            let bitDepths = matchRegEx.matches.value(index, "BitDepths") ?? ""
             let support = Array(matchRegEx.matches[index, "Support"])
 
             var supportFlags: [Support] = (support[0] == "I" ? [.input] : []) + ((support[1] == "O") ? [.output] : [])
             supportFlags += ((support[2] == "H") ? [.hardwareAccelerated] : [])
             supportFlags += ((support[3] == "P") ? [.paletted] : []) + ((support[4] == "B") ? [.bitstream] : [])
             
-            pixelFormats.append(PixelFormat(filter: filter, components: components, bitsPerPixel: bitsPerPixel, support: supportFlags))
+            pixelFormats.append(PixelFormat(filter: filter, components: components, bitsPerPixel: bitsPerPixel, bitDepths: bitDepths, support: supportFlags))
         }
         
         self.pixelFormats = pixelFormats
@@ -585,7 +608,7 @@ struct FFmpegPixelFormats: FFmpegOutputHandler {
 
 
 struct FFmpegProtocols: FFmpegOutputHandler {
-    private static let RegExPattern = #"(?:(?:(?<Input>Input):\n)+|(?:(?<Output>Output):\n)+)|^\s\s(?<Protocol>\S+)*$"#  // -protocols, a bit different in that Input/Output are states
+    static let RegExPattern = #"(?:(?:(?<Input>Input):\n)+|(?:(?<Output>Output):\n)+)|^\s\s(?<Protocol>\S+)*$"#  // -protocols, a bit different in that Input/Output are states
     
     struct FFmpegProtocolsStruct: Encodable {
         let input: [String]
@@ -632,7 +655,7 @@ struct FFmpegProtocols: FFmpegOutputHandler {
 
 
 struct FFmpegSampleFormats: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?<Name>(?!name)\S+)\s*(?<Depth>(?!depth)\d+)\s*$"#  // -sample_fmts
+    static let RegExPattern = #"^(?<Name>(?!name)\S+)\s*(?<Depth>(?!depth)\d+)\s*$"#  // -sample_fmts
 
     struct SampleFormat: Encodable {
         let name: String
@@ -662,7 +685,7 @@ struct FFmpegSampleFormats: FFmpegOutputHandler {
 
 
 struct FFmpegVersion: FFmpegOutputHandler {
-    private static let RegExPattern = #"^(?:FFmpegTask version (?<Version>\S+)\s(?<FFmpegCopyright>.*)\nbuilt with (?<Compiler>.*)\nconfiguration: (?<Configuration>.*)\n)|(?:(?<Library>lib\S+)\s*(?<Major>\d+)\.\s*(?<Minor>\d+)\.\s*(?<Build>\d+))"#  // -version
+    static let RegExPattern = #"^(?:FFmpegTask version (?<Version>\S+)\s(?<FFmpegCopyright>.*)\nbuilt with (?<Compiler>.*)\nconfiguration: (?<Configuration>.*)\n)|(?:(?<Library>lib\S+)\s*(?<Major>\d+)\.\s*(?<Minor>\d+)\.\s*(?<Build>\d+))"#  // -version
     
     struct FFmpegVersionStruct: Encodable {
         let version: String
@@ -680,25 +703,41 @@ struct FFmpegVersion: FFmpegOutputHandler {
             os_log("Invalid ffmpeg version output; unexpected format", type: OSLogType.error)
             return nil
         }
-        
-        let version = matchRegEx.matches[0, "Version"]
-        let compiler = matchRegEx.matches[0, "Compiler"]
-        let ffmpegCopyright = matchRegEx.matches[0, "FFmpegCopyright"]
-        
-        // Retrieve the configuration but remove reference to folders
-        let configuration = matchRegEx.matches[0, "Configuration"].replacingOccurrences(of: #"--\S+=\/\S+\s+"#, with: "", options: .regularExpression)
-                
-        var libraries: [String : String] = [:]
-        for index in 2...matchRegEx.matches.count - 1 {
-            let library = matchRegEx.matches[index, "Library"]
-            let major = matchRegEx.matches[index, "Major"]
-            let minor = matchRegEx.matches[index, "Minor"]
-            let build = matchRegEx.matches[index, "Build"]
 
-            libraries[library] = "\(major).\(minor).\(build)"
+        let m = matchRegEx.matches
+
+        // The pattern alternates between the header block and a library line, so which match is
+        // which is not fixed - find the header rather than assuming it is first, and read every
+        // group through the non-trapping accessor.
+        var header: Int?
+        var libraries: [String : String] = [:]
+
+        for index in 0..<m.count {
+            if m.value(index, "Version") != nil {
+                header = header ?? index
+
+            } else if let library = m.value(index, "Library"),
+                      let major = m.value(index, "Major"),
+                      let minor = m.value(index, "Minor"),
+                      let build = m.value(index, "Build") {
+                libraries[library] = "\(major).\(minor).\(build)"
+            }
         }
-        
-        self.version = FFmpegVersionStruct(version: version, compiler: compiler, ffmpegCopyright: ffmpegCopyright, configuration: configuration, libraries: libraries)
+
+        guard let headerIndex = header else {
+            os_log("ffmpeg version output carried no version header", type: OSLogType.error)
+            return nil
+        }
+
+        // Strip absolute paths out of the configuration; they are this machine's, not information.
+        let configuration = (m.value(headerIndex, "Configuration") ?? "")
+            .replacingOccurrences(of: #"--\S+=\/\S+\s+"#, with: "", options: .regularExpression)
+
+        self.version = FFmpegVersionStruct(version: m.value(headerIndex, "Version") ?? "",
+                                           compiler: m.value(headerIndex, "Compiler") ?? "",
+                                           ffmpegCopyright: m.value(headerIndex, "FFmpegCopyright") ?? "",
+                                           configuration: configuration,
+                                           libraries: libraries)
     }
 }
 

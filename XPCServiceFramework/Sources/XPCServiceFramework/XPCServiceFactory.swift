@@ -1,10 +1,9 @@
 import Foundation
-import SiliconInk_Helper
 
 
 // Factory XPC service classes
 @objc
-public protocol XPCServiceFactoryProtocol : class {
+public protocol XPCServiceFactoryProtocol : AnyObject {
     
     typealias CompletionHandler = (_ endpoint: NSXPCListenerEndpoint?, _ error: Error?) -> Void
     
@@ -28,7 +27,7 @@ public class XPCServiceFactory: XPCServiceListenerDelegate, XPCServiceFactoryPro
     
     public init(services: ServiceDictionary) {
         self.services = services
-        super.init(interface: XPCServiceFactoryProtocol.self)
+        super.init(interface: NSXPCInterface(with: XPCServiceFactoryProtocol.self))
     }
     
     public func request(serviceName: String, reply handler: @escaping (XPCServiceFactoryProtocol.CompletionHandler)) {
@@ -57,12 +56,18 @@ public class XPCServiceFactoryProxy: XPCServiceProxy<XPCServiceFactoryProtocol> 
     
     
     public init(serviceName: String) {
-        super.init(serviceName: serviceName, protocol: XPCServiceFactoryProtocol.self)
+        super.init(serviceName: serviceName, interface: NSXPCInterface(with: XPCServiceFactoryProtocol.self))
     }
     
     public func request(serviceName: String, reply handler: @escaping (XPCServiceFactoryProxy.CompletionHandler)) {
         proxy.request(serviceName: serviceName) { endpoint, error in
-            handler(Result.init(success: endpoint, failure: error))
+            if let endpoint = endpoint {
+                handler(.success(endpoint))
+            } else if let error = error as? XPCServiceFactory.FactoryError {
+                handler(.failure(error))
+            } else {
+                handler(.failure(.unexpectedResult))
+            }
         }
     }
     

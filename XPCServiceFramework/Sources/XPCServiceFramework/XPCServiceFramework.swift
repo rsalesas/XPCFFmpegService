@@ -12,9 +12,9 @@ open class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
     
     fileprivate let listener: NSXPCListener
     
-    private let interface: Protocol
+    private let interface: NSXPCInterface
     
-    fileprivate init(mode: ListenerMode, interface: Protocol) {
+    fileprivate init(mode: ListenerMode, interface: NSXPCInterface) {
         self.interface = interface
         self.listener = (mode == .service) ? NSXPCListener.service() : NSXPCListener.anonymous()
         super.init()
@@ -22,8 +22,12 @@ open class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
         self.listener.delegate = self
     }
     
+    fileprivate convenience init(mode: ListenerMode, interface: Protocol) {
+        self.init(mode: mode, interface: NSXPCInterface(with: interface))
+    }
+    
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        newConnection.exportedInterface = NSXPCInterface(with: interface)
+        newConnection.exportedInterface = interface
         newConnection.exportedObject = self
         newConnection.resume()
         return true
@@ -46,8 +50,12 @@ open class XPCListenerDelegate: NSObject, NSXPCListenerDelegate {
 // Creates a service listener for the specified interface/object
 open class XPCServiceListenerDelegate: XPCListenerDelegate {
         
-    public init(interface: Protocol) {
+    public init(interface: NSXPCInterface) {
         super.init(mode: .service, interface: interface)
+    }
+    
+    public convenience init(interface: Protocol) {
+        self.init(interface: NSXPCInterface(with: interface))
     }
 }
 
@@ -61,15 +69,19 @@ open class XPCAnonymousListenerDelegate: XPCListenerDelegate {
         }
     }
     
-    public init(interface: Protocol) {
+    public init(interface: NSXPCInterface) {
         super.init(mode: .anonymous, interface: interface)
+    }
+
+    public convenience init(interface: Protocol) {
+        self.init(interface: NSXPCInterface(with: interface))
     }
 
 }
 
 
 // Connection/proxy classes
-public protocol XPCServiceProxyProtocol : class {
+public protocol XPCServiceProxyProtocol : AnyObject {
     associatedtype Service
     
     var proxy: Service { get }
@@ -85,7 +97,7 @@ public protocol XPCServiceProxyProtocol : class {
 }
 
 
-public protocol XPCServiceProxyDelegateProtocol : class {
+public protocol XPCServiceProxyDelegateProtocol : AnyObject {
 
     func interruption()
     
@@ -99,47 +111,51 @@ public protocol XPCServiceProxyDelegateProtocol : class {
 open class XPCServiceProxy<Proxy>: XPCServiceProxyProtocol {
         
     private var serviceName: String
-    private var `protocol`: Protocol
+    private var interface: NSXPCInterface
     
     private var connection: NSXPCConnection
     private weak var delegate: XPCServiceProxyDelegateProtocol?
     
-    private lazy var remoteProxy: Proxy = connection.remoteObjectProxyWithErrorHandler { [weak self] error in
-            self?.delegate?.connectionError(error: error)
-        } as! Proxy
-    
+    // Resolved against the current connection on every access rather than cached, so that a
+    // proxy handed out after reconnect() talks to the new connection instead of the dead one.
     public var proxy: Proxy {
         get {
-            return remoteProxy
+            return connection.remoteObjectProxyWithErrorHandler { [weak self] error in
+                    self?.delegate?.connectionError(error: error)
+                } as! Proxy
         }
     }
 
-    public init(serviceName: String, protocol: Protocol, delegate: XPCServiceProxyDelegateProtocol? = nil) {
+    public init(serviceName: String, interface: NSXPCInterface, delegate: XPCServiceProxyDelegateProtocol? = nil) {
         self.serviceName = serviceName
-        self.protocol = `protocol`
+        self.interface = interface
         self.delegate = delegate
         
-        connection = XPCServiceProxy.connect(serviceName: serviceName, protocol: `protocol`, delegate: delegate)
+        connection = XPCServiceProxy.connect(serviceName: serviceName, interface: interface, delegate: delegate)
         
         if self.delegate == nil, self is XPCServiceProxyDelegateProtocol {
             self.delegate = self as? XPCServiceProxyDelegateProtocol
         }
     }
     
-    public func reconnect() {
-        connection = XPCServiceProxy.connect(serviceName: self.serviceName, protocol: self.protocol, delegate: delegate)
+    public convenience init(serviceName: String, protocol: Protocol, delegate: XPCServiceProxyDelegateProtocol? = nil) {
+        self.init(serviceName: serviceName, interface: NSXPCInterface(with: `protocol`), delegate: delegate)
     }
     
-    private static func connect(serviceName: String, protocol: Protocol, delegate: XPCServiceProxyDelegateProtocol?) -> NSXPCConnection {
+    public func reconnect() {
+        connection = XPCServiceProxy.connect(serviceName: self.serviceName, interface: self.interface, delegate: delegate)
+    }
+    
+    private static func connect(serviceName: String, interface: NSXPCInterface, delegate: XPCServiceProxyDelegateProtocol?) -> NSXPCConnection {
         let connection = NSXPCConnection(serviceName: serviceName)
-        connection.remoteObjectInterface = NSXPCInterface(with: `protocol`)
+        connection.remoteObjectInterface = interface
         
         connection.interruptionHandler = { [weak delegate] in
             delegate?.interruption()
         }
             
         connection.invalidationHandler =  { [weak delegate] in
-            delegate?.interruption()
+            delegate?.invalidation()
         }
 
         return connection
@@ -158,4 +174,3 @@ open class XPCServiceProxy<Proxy>: XPCServiceProxyProtocol {
     }
 
 }
-

@@ -11,7 +11,6 @@
 //
 
 import Foundation
-import SiliconInk_Helper
 import os.log  // https://tinyurl.com/y9t97fqs and https://tinyurl.com/ybtbks5j
 
 
@@ -61,11 +60,11 @@ public class FFmpegTask {
         setenv("AV_LOG_FORCE_NOCOLOR", "1", 1)
         
         // Reset stdxxx to the proxy stdxxx pipe to allow intercepting and redirect to processor
-        FileHandle.standardOutput.duplicateFrom(fileHandle: proxyStandardOutputPipe.fileHandleForWriting)
-        FileHandle.standardError.duplicateFrom(fileHandle: proxyStandardErrorPipe.fileHandleForWriting)
+        proxyStandardOutputPipe.fileHandleForWriting.duplicate(into: FileHandle.standardOutput)
+        proxyStandardErrorPipe.fileHandleForWriting.duplicate(into: FileHandle.standardError)
 
         // Set stdin to stdnull - just in case - the trick above could be used with stdin for IPC if needed
-        FileHandle.standardInput.duplicateFrom(fileHandle: FileHandle.nullDevice)
+        FileHandle.nullDevice.duplicate(into: FileHandle.standardInput)
         
         // Prepare the exit handler to ensure that the above handles are all flushed and finished
         // In order for the C function closure to work, variables must be static, therefore this is
@@ -74,6 +73,13 @@ public class FFmpegTask {
         // WARNING: This must be the first registered closure, otherwise flushing will not succeed.
 
         atexit {
+            // Before anything else. exit() runs atexit handlers and only then flushes stdio, so
+            // whatever is still sitting in the FILE* buffers would otherwise be written after the
+            // descriptors below have been restored - straight past the pipes, and past the output
+            // handlers with them. Small payloads never overflow the buffer on their own, which is
+            // why -version and -pix_fmts arrived as raw text while -codecs came through as JSON.
+            fflush(nil)
+
             if let stdOutConnector = FFmpegTask.Application.stdOutConnector {
                 stdOutConnector.flush()
             }
@@ -87,8 +93,8 @@ public class FFmpegTask {
             }
             
             // Reset the handles to stdout and stderr
-            FileHandle.standardOutput.duplicateFrom(fileHandle: FFmpegTask.Application.defaultStandardOutput)
-            FileHandle.standardError.duplicateFrom(fileHandle: FFmpegTask.Application.defaultStandardError)
+            FFmpegTask.Application.defaultStandardOutput.duplicate(into: FileHandle.standardOutput)
+            FFmpegTask.Application.defaultStandardError.duplicate(into: FileHandle.standardError)
         }
     }
 
