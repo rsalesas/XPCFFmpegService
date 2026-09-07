@@ -36,7 +36,22 @@ public struct MediaInfo {
         public let channels: Int?
         public let duration: TimeInterval?
         public let bitrate: Bitrate?
+        /// Colour tags, when the stream carries them. Absent is not the same as Rec. 709 - it
+        /// means the file never said, and ffmpeg will guess from the resolution.
+        public let colorSpace: String?
+        public let colorPrimaries: String?
+        public let colorTransfer: String?
+        public let colorRange: String?
         public let tags: [String : String]
+
+        /// What the stream says its colour is, ready to hand to `VideoSettings.colorProperties`.
+        public var colorProperties: ColorProperties { ColorProperties(matching: self) }
+
+        /// Whether the transfer characteristic is one of the HDR ones.
+        public var isHighDynamicRange: Bool {
+            guard let transfer = colorTransfer else { return false }
+            return transfer == "smpte2084" || transfer == "arib-std-b67"
+        }
 
         public var frameSize: FrameSize? {
             guard let width = width, let height = height else { return nil }
@@ -44,8 +59,21 @@ public struct MediaInfo {
         }
     }
 
+    /// A named span of the timeline. Empty unless the probe asked for chapters -
+    /// `ProbeOptions.showChapters` - since ffprobe does not report them otherwise.
+    public struct Chapter {
+        public let id: Int
+        public let start: TimeInterval?
+        public let end: TimeInterval?
+        public let tags: [String : String]
+
+        /// The chapter's name, which files conventionally put in a "title" tag.
+        public var title: String? { tags["title"] }
+    }
+
     public let format: Format?
     public let streams: [Stream]
+    public let chapters: [Chapter]
 
     /// The container duration, falling back to the longest stream when the container does not
     /// declare one - which some formats genuinely do not.
@@ -74,9 +102,10 @@ public struct MediaInfo {
 
         format = (root["format"] as? [String : Any]).map(MediaInfo.format(from:))
         streams = (root["streams"] as? [[String : Any]] ?? []).map(MediaInfo.stream(from:))
+        chapters = (root["chapters"] as? [[String : Any]] ?? []).map(MediaInfo.chapter(from:))
 
-        if format == nil && streams.isEmpty {
-            throw FFmpegError.unexpectedResponse("ffprobe returned neither format nor streams")
+        if format == nil && streams.isEmpty && chapters.isEmpty {
+            throw FFmpegError.unexpectedResponse("ffprobe returned neither format, streams nor chapters")
         }
     }
 
@@ -101,7 +130,20 @@ public struct MediaInfo {
                       channels: int(json["channels"]),
                       duration: seconds(json["duration"]),
                       bitrate: int(json["bit_rate"]).map { Bitrate(bitsPerSecond: $0) },
+                      colorSpace: json["color_space"] as? String,
+                      colorPrimaries: json["color_primaries"] as? String,
+                      colorTransfer: json["color_transfer"] as? String,
+                      colorRange: json["color_range"] as? String,
                       tags: tags(json["tags"]))
+    }
+
+    /// ffprobe reports a chapter's bounds twice: as a rational time base plus integer ticks, and
+    /// as "start_time"/"end_time" in seconds. The seconds are what a caller wants.
+    private static func chapter(from json: [String : Any]) -> Chapter {
+        return Chapter(id: int(json["id"]) ?? 0,
+                       start: seconds(json["start_time"]),
+                       end: seconds(json["end_time"]),
+                       tags: tags(json["tags"]))
     }
 
     private static func tags(_ value: Any?) -> [String : String] {

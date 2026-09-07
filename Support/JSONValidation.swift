@@ -15,6 +15,9 @@ import Foundation
 fileprivate enum JSONCharacters {
     static let OpenBrace: UInt8 = 123
     static let CloseBrace: UInt8 = 125
+    static let OpenBracket: UInt8 = 91
+    static let CloseBracket: UInt8 = 93
+    static let whitespace: Set<UInt8> = [0x20, 0x09, 0x0A, 0x0D]
 }
 
 extension Data {
@@ -26,17 +29,22 @@ extension Data {
         }
     }
 
-    // NB: This strips everything but the braces, but will return true for invalid JSON surrounded by braces. Should be used only on validated JSON
+    /// Whether the record is an empty object or array - `{}` or `[]` - and so carries no answer.
+    ///
+    /// This used to strip everything except braces and check the first two were `{` then `}`,
+    /// which is true of any flat object whose values happen to contain no braces of their own.
+    /// `{"license": "...text with no braces..."}` reduced to `{}` and was discarded as empty, so
+    /// the caller was told the job had simply succeeded and got no answer at all - silently, since
+    /// discarding a record is not an error anywhere on this path.
+    ///
+    /// Whitespace is dropped because a record may be pretty-printed; nothing else is, so anything
+    /// with content in it fails the comparison.
     var isEmptyJSON: Bool {
         get {
-            let json = self.filter { c in
-                return c == JSONCharacters.OpenBrace || c == JSONCharacters.CloseBrace
-            }
+            let stripped = self.filter { !JSONCharacters.whitespace.contains($0) }
 
-            // Guarded: a record carrying no braces at all used to index straight off the end.
-            guard json.count >= 2 else { return false }
-
-            return (json.first == JSONCharacters.OpenBrace) && (json[json.index(after: json.startIndex)] == JSONCharacters.CloseBrace)
+            return stripped.elementsEqual([JSONCharacters.OpenBrace, JSONCharacters.CloseBrace])
+                || stripped.elementsEqual([JSONCharacters.OpenBracket, JSONCharacters.CloseBracket])
         }
     }
 }

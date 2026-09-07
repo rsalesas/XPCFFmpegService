@@ -63,6 +63,32 @@ for an output. Two consequences:
    instead, and resets signal dispositions with `SETSIGDEF`/`SETSIGMASK`, without which the child
    inherits the service's and a cancel's SIGTERM lands on `SIG_IGN`.
 
+3. **Some muxers ignore the protocol.** `image2` reads its output as a *filename pattern*; handed
+   `fd:` it writes the picture to standard output and exits successfully, leaving the destination
+   empty. `Container.image` therefore muxes as `image2pipe`. The same reasoning rules out numbered
+   output (`frame%03d.png`) altogether, which is why `Conversion.contactSheet` produces one tiled
+   image rather than a sequence.
+4. **Joining re-encodes.** The concat *demuxer* would copy streams through untouched, but it takes
+   a list file naming its inputs by path. `Conversion.joining` uses the concat *filter* instead.
+
+### The one path that is still a path
+
+`-passlogfile` — where a two-pass encode leaves its statistics between passes — has no descriptor
+form. ffmpeg opens it by name, so something has to name somewhere both processes may write.
+
+The service does. FFmpegTask inherits the service's sandbox, so a directory in the service's own
+container is reachable from both, and the client asks for one with a *scratch token*: a placeholder
+in the argument vector, like a descriptor token, that the service replaces with a path it chose.
+Nothing the caller names ever becomes a scratch path, and the token's id has to parse as a UUID
+before it names a directory.
+
+Lifetime is the awkward part, because a two-pass encode is two jobs: the first writes the log and
+the second reads it, so the first cannot take its directory with it. Both passes use the same token
+id and only the last one asks for cleanup — except on failure, where it goes anyway, since a
+half-written pass log is worse than none and a failed first pass has no second pass coming. A
+client that disappears between the two leaves a directory behind, so the service also sweeps
+anything older than an hour.
+
 ## The pipe between the service and FFmpegTask
 
 Length-prefixed records: four bytes big-endian, then that many bytes. The payload is opaque.

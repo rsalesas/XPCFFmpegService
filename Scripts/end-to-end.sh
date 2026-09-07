@@ -58,7 +58,9 @@ codesign -f -s - "$TASK" 2>/dev/null
 if [ ! -s "$MEDIA/src.mp4" ]; then
     echo "Generating test media..."
     "$TASK" -ffmpeg -f lavfi -i "testsrc=size=640x480:rate=25:duration=40" \
-        -c:v libx264 -preset ultrafast -y "$MEDIA/src.mp4" > /dev/null 2>&1
+        -f lavfi -i "sine=frequency=440:duration=40" \
+        -c:v libx264 -preset ultrafast -c:a aac -shortest \
+        -y "$MEDIA/src.mp4" > /dev/null 2>&1
 fi
 
 # ---------------------------------------------------------------- entitlements

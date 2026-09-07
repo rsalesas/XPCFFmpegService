@@ -19,6 +19,11 @@ public enum FFmpegError: Error {
     case indeterminateContainer(URL)
     /// The reply did not look like what the request should have produced.
     case unexpectedResponse(String)
+    /// Two requests that both need to own the filter graph. Loudness normalisation is built out of
+    /// a filter, so it cannot be combined with a graph or with stream maps the caller wrote.
+    case conflictingFilterGraph(String)
+    /// A measuring pass produced no measurements, so the second pass has nothing to work from.
+    case measurementFailed(String)
     /// The XPC connection itself failed.
     case serviceUnavailable(Error)
 }
@@ -55,6 +60,12 @@ extension FFmpegError: LocalizedError {
 
         case .unexpectedResponse(let detail):
             return "The service returned an unexpected response (\(detail))."
+
+        case .conflictingFilterGraph(let detail):
+            return detail
+
+        case .measurementFailed(let detail):
+            return "The measuring pass produced no usable result (\(detail))."
 
         case .serviceUnavailable(let underlying):
             return "The FFmpeg service is unavailable (\(underlying.localizedDescription))."

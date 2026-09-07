@@ -151,7 +151,7 @@ struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
         var outTime: TimeInterval?
         var duplicateFrames: Int
         var droppedFrames: Int
-        var speed: Int?
+        var speed: Double?
         var finished: Bool
     }
 
@@ -193,7 +193,7 @@ struct FFmpegProgress: FFmpegOutputHandlerWithTerminators {
         let bitrate = m.value(0, "Bitrate").flatMap { Double($0) }
         let totalSize = m.value(0, "TotalSize").flatMap { Int($0) }
         let ms = m.value(0, "OutTime").flatMap { TimeInterval($0) }
-        let speed = m.value(0, "Speed").flatMap { Int($0) }
+        let speed = m.value(0, "Speed").flatMap { Double($0) }
         
         self.progress = FFmpegProgressStruct(frame: frame, fps: fps, input: input, stream: stream, quality: quality, bitrate: bitrate, totalSize: totalSize, outTime: ms == nil ? nil : ms! / 1000000.0, duplicateFrames: duplicateFrames, droppedFrames: droppedFrames, speed: speed, finished: m.value(0, "Progress") == "end")
     }

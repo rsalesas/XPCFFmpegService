@@ -151,7 +151,9 @@ extension ServiceError: LocalizedError, CustomNSError {
     public var outTime: TimeInterval?
     public var duplicateFrames: Int
     public var droppedFrames: Int
-    public var speed: Int?
+    /// Encoding speed as a multiple of realtime. Fractional: ffmpeg prints "0.997x"
+    /// as readily as "12x".
+    public var speed: Double?
     public var finished: Bool
 
     public override var description: String {
@@ -206,7 +208,7 @@ extension ServiceError: LocalizedError, CustomNSError {
         outTime = coder.decodeObject(of: NSNumber.self, forKey: "outTime")?.doubleValue
         duplicateFrames = coder.decodeInteger(forKey: "duplicateFrames")
         droppedFrames = coder.decodeInteger(forKey: "droppedFrames")
-        speed = coder.decodeObject(of: NSNumber.self, forKey: "speed")?.intValue
+        speed = coder.decodeObject(of: NSNumber.self, forKey: "speed")?.doubleValue
         finished = coder.decodeBool(forKey: "finished")
     }
 }
@@ -257,8 +259,53 @@ extension ServiceError: LocalizedError, CustomNSError {
     public static let tokenPrefix = "\u{1}xpcffmpeg.fd."
     public static let tokenTerminator: Character = "\u{1}"
 
+    /// A placeholder for a scratch *path* in `arguments`, which the service fills in with a
+    /// location inside its own container.
+    ///
+    /// The exception that proves the descriptor rule. Almost everything ffmpeg touches can be
+    /// handed to it already open, but a few options take a filename it opens for itself, and
+    /// `-passlogfile` - the statistics a two-pass encode writes between passes - is the one that
+    /// matters. There is no descriptor form of it. Since FFmpegTask inherits the service's
+    /// sandbox, the service is the process that can name somewhere both of them may write, so it
+    /// picks the path and removes what was left there when the job ends.
+    ///
+    /// Nothing the caller names ever becomes a scratch path: this is a private scribbling place,
+    /// not a way to reach a file by name.
+    public static let scratchTokenPrefix = "\u{1}xpcffmpeg.scratch."
+
+    /// Marks a scratch token whose contents have to outlive the job that wrote them.
+    ///
+    /// A two-pass encode is two jobs: the first writes the statistics and the second reads them,
+    /// so the first cannot take its scratch directory with it. Both passes use the same token id,
+    /// and only the last one asks for it to be cleaned up.
+    public static let scratchRetainedMarker = "keep."
+
     public static func token(for id: UUID = UUID()) -> String {
         return "\(tokenPrefix)\(id.uuidString)\(tokenTerminator)"
+    }
+
+    /// - Parameter retained: leave the directory in place when this job finishes, because a later
+    ///   one still needs what is in it.
+    public static func scratchToken(for id: UUID = UUID(), retained: Bool = false) -> String {
+        let marker = retained ? scratchRetainedMarker : ""
+        return "\(scratchTokenPrefix)\(marker)\(id.uuidString)\(tokenTerminator)"
+    }
+
+    /// The identity and lifetime encoded in a scratch token, or nil if it is not one.
+    public static func scratch(from token: String) -> (id: String, isRetained: Bool)? {
+        guard token.hasPrefix(scratchTokenPrefix) else { return nil }
+
+        var body = String(token.dropFirst(scratchTokenPrefix.count))
+        if body.last == tokenTerminator { body.removeLast() }
+
+        let isRetained = body.hasPrefix(scratchRetainedMarker)
+        if isRetained { body.removeFirst(scratchRetainedMarker.count) }
+
+        // The id has to be exactly what a UUID looks like: it names a directory, and a token is
+        // the one part of a request the caller composes freely.
+        guard UUID(uuidString: body) != nil else { return nil }
+
+        return (body, isRetained)
     }
 
     /// The FFmpegTask request verb: "-ffmpeg", "-ffprobe", "-codecs", "-version", and so on.

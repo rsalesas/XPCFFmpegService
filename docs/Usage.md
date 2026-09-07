@@ -128,6 +128,136 @@ and `-filter`, since a complex graph expresses everything they do. A graph gener
 extension. An unrecognised extension throws `FFmpegError.indeterminateContainer` rather than
 guessing — see [Architecture](Architecture.md) for why this cannot be left to FFmpeg.
 
+## Controlling the encode
+
+**Rate control.** `bitrate` or `quality`, never both — a rate wins if you set both. A ceiling needs
+a window to mean anything, so `maxBitrate` and `bufferSize` are only emitted together:
+
+```swift
+VideoSettings.streaming(bitrate: .mbps(5))      // fills in the ceiling and window for you
+VideoSettings(codec: .h264, bitrate: .mbps(5),
+              maxBitrate: .mbps(6), bufferSize: .mbps(12),
+              keyframeInterval: 48, profile: "high", level: "4.1", tune: "film")
+```
+
+Anything the encoder takes that this does not name goes in `encoderOptions`, emitted as
+`-<name> <value>` in a stable order:
+
+```swift
+VideoSettings(codec: .h264, encoderOptions: ["x264-params": "keyint=50:min-keyint=50"])
+```
+
+**Two-pass** is a flag, not a workflow:
+
+```swift
+VideoSettings(codec: .h264, bitrate: .mbps(4), isTwoPass: true)
+```
+
+`convert` then runs ffmpeg twice, keeps the statistics between the runs, and reports one continuous
+`fractionCompleted` across both. Only worth setting with a `bitrate` — there is nothing for a
+second pass to do when the target is a quality.
+
+**Faststart.** `Output(optimizeForStreaming: true)` moves the index to the front so a player can
+start before it has the whole file. Set it for anything served over HTTP. Emitted only for MP4 and
+MOV, where it means something.
+
+**Colour.** Carried across, or set outright:
+
+```swift
+let source = try await ffmpeg.probe(url)
+let video = VideoSettings(codec: .hevc, colorProperties: source.videoStreams.first?.colorProperties)
+// or .rec709, .rec2020PQ, .rec2020HLG
+```
+
+Worth doing whenever the source is not plain Rec. 709. ffmpeg carries these tags through some paths
+and drops them on others, and an HDR source transcoded without them comes out washed out with
+nothing in the log to say why. `MediaInfo.Stream.isHighDynamicRange` says whether it matters.
+
+## Hardware
+
+Never automatic. A hardware encoder is much faster and much cheaper in power, and at a given
+bitrate usually worse than x264 at anything but the fastest presets — which of those you want is
+not something this package should decide. What it will do is tell you whether one exists:
+
+```swift
+let codec = await ffmpeg.hardwareEncoder(for: .hevc) ?? .hevc
+let settings = codec.isHardwareAccelerated
+    ? VideoSettings.hevcVideoToolbox(bitrate: .mbps(8))   // hardware takes a rate, not a CRF
+    : VideoSettings.hevc(quality: 28)
+```
+
+Decoding is opt-in the same way, per input:
+
+```swift
+Input(url: source, hardwareAcceleration: .videoToolbox)
+```
+
+Also not free: a format the engine cannot handle falls back to software silently, and filters that
+need frames in main memory pull them back out again, which can cost more than it saved.
+
+## Streams and subtitles
+
+`Output.video` and `.audio` apply to every video and every audio stream. When they should not,
+`streamOverrides` names particular ones — emitted after the blanket settings, so the more specific
+wins, which is ffmpeg's own rule:
+
+```swift
+Output(url: destination, container: .matroska,
+       audio: .aac(.kbps(160)),
+       subtitles: SubtitleSettings(codec: .movText, language: "eng"),
+       streamOverrides: [StreamOverride(.audio(1), .audio(.aac(.kbps(64))))])
+```
+
+Subtitles are `SubtitleSettings`: `.copy` to carry them across, `.movText` for MP4 (nothing else
+survives that container), `.disabled` to drop them. Note that burning subtitles *into* the picture
+needs libass, which this build does not include — see [Building](Building.md).
+
+**Channel layout** is separate from channel count, and usually the more useful of the two:
+
+```swift
+AudioSettings(codec: .aac, channels: 6, channelLayout: .surround51)
+```
+
+**Loudness** normalises to a target:
+
+```swift
+AudioSettings(codec: .aac, loudness: .streaming)     // -16 LUFS; also .broadcastEBU, .broadcastATSC
+```
+
+`loudnorm` is a filter, so this composes the filter graph for you — which means it cannot be
+combined with a `filterGraph` or `streamMaps` you wrote yourself. Asking for both throws
+`FFmpegError.conflictingFilterGraph` with the filter string, so you can put it in your own graph
+instead. Two-pass by default: in one pass `loudnorm` works from what it has heard so far, so the
+start of a file is normalised against nothing.
+
+## Joining, and stills
+
+```swift
+Conversion.joining([first, second, third], to: destination, container: .mp4)
+Conversion.thumbnail(of: source, to: pngURL, at: 12.5)
+Conversion.contactSheet(of: source, to: pngURL, columns: 4, rows: 4, interval: 10)
+```
+
+`joining` uses the concat *filter*, so everything is decoded and re-encoded. The concat demuxer
+would copy streams through untouched, but it takes a list file naming its inputs by path — and a
+path is what cannot reach ffmpeg here. The sources have to agree on what they contain: concat will
+not join a clip that has a soundtrack to one that does not.
+
+`contactSheet` writes one tiled image rather than a numbered sequence, for the same reason:
+`frame%03d.png` needs a filename pattern to fill in, and an output reached through a descriptor has
+no name.
+
+## Remote inputs
+
+```swift
+Conversion(inputs: [.remote(URL(string: "https://example.com/stream.m3u8")!)],
+           outputs: [Output(url: destination, container: .mp4)])
+```
+
+The one input that is not opened here. There is nothing to open, so the URL goes to ffmpeg and the
+fetch happens inside the sandboxed helper rather than in your process. `protocols()` says which
+schemes the build understands.
+
 ## Errors
 
 ```swift

@@ -178,6 +178,84 @@ final class XPCFFmpegInvokeServiceTests: XCTestCase {
 
     // MARK: - Bad requests
 
+    // MARK: - Scratch paths
+
+    /// The exception to "no path ever reaches the child": a scratch token becomes a real path,
+    /// because -passlogfile has no descriptor form. It has to be a path this service owns.
+    func testAScratchTokenBecomesAPathInsideTheServiceContainer() throws {
+        let record = directory.appendingPathComponent("argv")
+        let task = stub(.recordingArguments(to: record))
+        let (token, handle) = try granted(existingFile)
+        let scratch = FFmpegRequest.scratchToken()
+
+        invoke(request(arguments: ["-fd", token, "-i", "fd:", "-passlogfile", scratch],
+                       verb: "-ffmpeg"),
+               task: task, tokens: [token], handles: [handle])
+
+        let argv = ((try? String(contentsOf: record, encoding: .utf8)) ?? "")
+            .split(separator: "\n").map(String.init)
+        let path = try XCTUnwrap(argv.last)
+
+        XCTAssertFalse(path.hasPrefix(FFmpegRequest.scratchTokenPrefix), "the token was substituted")
+        XCTAssertTrue(path.hasPrefix(FileManager.default.temporaryDirectory.path),
+                      "a scratch path belongs to this service, not to the caller")
+    }
+
+    func testTheSameScratchTokenResolvesToOnePlaceWithinARequest() throws {
+        let record = directory.appendingPathComponent("argv")
+        let task = stub(.recordingArguments(to: record))
+        let (token, handle) = try granted(existingFile)
+        let scratch = FFmpegRequest.scratchToken()
+
+        invoke(request(arguments: ["-fd", token, "-i", "fd:", "-passlogfile", scratch,
+                                   "-other", scratch], verb: "-ffmpeg"),
+               task: task, tokens: [token], handles: [handle])
+
+        let argv = ((try? String(contentsOf: record, encoding: .utf8)) ?? "")
+            .split(separator: "\n").map(String.init)
+
+        XCTAssertEqual(argv[argv.count - 3], argv[argv.count - 1])
+    }
+
+    /// The two passes of an encode are two jobs. The first must leave the log behind for the
+    /// second, and the second must take it away.
+    func testARetainedScratchOutlivesItsJobAndAnUnretainedOneDoesNot() throws {
+        let identifier = UUID()
+        let expected = FileManager.default.temporaryDirectory
+            .appendingPathComponent("scratch-\(identifier.uuidString)", isDirectory: true)
+
+        for (retained, shouldSurvive) in [(true, true), (false, false)] {
+            let (token, handle) = try granted(existingFile)
+            let scratch = FFmpegRequest.scratchToken(for: identifier, retained: retained)
+
+            invoke(request(arguments: ["-fd", token, "-i", "fd:", "-passlogfile", scratch],
+                           verb: "-ffmpeg"),
+                   task: stub(.make(standardOutput: "{}")), tokens: [token], handles: [handle])
+
+            XCTAssertEqual(FileManager.default.fileExists(atPath: expected.path), shouldSurvive,
+                           "retained: \(retained)")
+        }
+
+        try? FileManager.default.removeItem(at: expected)
+    }
+
+    func testAFailedJobTakesItsScratchWithItEvenWhenRetained() throws {
+        let identifier = UUID()
+        let expected = FileManager.default.temporaryDirectory
+            .appendingPathComponent("scratch-\(identifier.uuidString)", isDirectory: true)
+        let (token, handle) = try granted(existingFile)
+
+        // A first pass that failed has no second pass coming, and half a pass log is worse than
+        // none: the second pass would read it and encode against measurements of a fragment.
+        let result = invoke(request(arguments: ["-fd", token, "-i", "fd:", "-passlogfile",
+                                                FFmpegRequest.scratchToken(for: identifier, retained: true)],
+                                    verb: "-ffmpeg"),
+                            task: stub(.make(exitCode: 1)), tokens: [token], handles: [handle])
+
+        XCTAssertNotNil(result.error)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: expected.path))
+    }
+
     func testMismatchedTokenAndHandleCountsAreRejected() {
         let task = stub(.make())
         let result = invoke(request(arguments: []), task: task,

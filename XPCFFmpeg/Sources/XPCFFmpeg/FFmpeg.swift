@@ -60,6 +60,12 @@ public final class FFmpeg {
             duration = await probeDuration(of: first.url)
         }
 
+        // Anything that has to measure before it encodes runs as two jobs, reported as one.
+        if conversion.requiresTwoPasses {
+            return try await convertInPasses(conversion, totalDuration: duration,
+                                             onProgress: onProgress)
+        }
+
         let job = start(try RequestBuilder.request(for: conversion), totalDuration: duration)
 
         if let onProgress = onProgress {
@@ -85,6 +91,35 @@ public final class FFmpeg {
     }
 
     // MARK: - Capabilities
+
+    /// The hardware encoder for a codec, if this build has one and the machine can run it.
+    ///
+    /// The deliberate shape of the opt-in. Nothing chooses a hardware encoder for you - the
+    /// tradeoff is real and it is yours - but the awkward part is finding out whether one is there
+    /// at all, and this answers that:
+    ///
+    /// ```swift
+    /// let codec = await ffmpeg.hardwareEncoder(for: .hevc) ?? .hevc
+    /// ```
+    ///
+    /// A codec that has no hardware form, or a build compiled without it, returns nil rather than
+    /// something that will fail later.
+    public func hardwareEncoder(for codec: VideoCodec) async -> VideoCodec? {
+        let hardware: VideoCodec
+        switch codec {
+        case .h264, .h264VideoToolbox:   hardware = .h264VideoToolbox
+        case .hevc, .hevcVideoToolbox:   hardware = .hevcVideoToolbox
+        case .proRes:                    hardware = .proRes
+        default:                         return nil
+        }
+
+        guard let encoders = try? await encoders(),
+              encoders.contains(where: { $0.name == hardware.argument }) else {
+            return nil
+        }
+
+        return hardware
+    }
 
     /// The FFmpeg build backing the service.
     public func version() async throws -> FFmpegVersion {

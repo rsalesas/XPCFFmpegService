@@ -24,9 +24,14 @@ enum Fixture {
         return try! JSONDecoder().decode(FFmpegProgress.self, from: Data(json.utf8))
     }
 
+    /// - Parameter escaping: quote the message properly, for the cases where it is itself JSON -
+    ///   which is how loudnorm reports what it measured.
     static func status(domain: String = "error", message: String = "something went wrong",
-                       indent: Int = 0) -> FFmpegStatus {
-        let json = "{\"domain\":\"\(domain)\",\"message\":\"\(message)\",\"indent\":\(indent)}"
+                       indent: Int = 0, escaping: Bool = false) -> FFmpegStatus {
+        let encoded = escaping
+            ? String(decoding: try! JSONEncoder().encode(message), as: UTF8.self)
+            : "\"\(message)\""
+        let json = "{\"domain\":\"\(domain)\",\"message\":\(encoded),\"indent\":\(indent)}"
         return try! JSONDecoder().decode(FFmpegStatus.self, from: Data(json.utf8))
     }
 

@@ -83,7 +83,7 @@ together:
 ```bash
 Scripts/end-to-end.sh               # the API against a real service, sandbox off
 Scripts/end-to-end.sh --sandboxed   # the same stack with the App Sandbox in force
-Scripts/end-to-end.sh --both        # 28 checks
+Scripts/end-to-end.sh --both        # 59 checks
 ```
 
 It builds the project, generates its own test clip, compiles
@@ -92,7 +92,14 @@ replacing the sample app's executable, so `launchd` resolves the genuine embedde
 it re-signs and runs. Exits non-zero if anything fails.
 
 It covers what unit tests cannot: a real probe and conversion, progress over a real anonymous
-listener, cancellation reaping the child, and the service still healthy afterwards.
+listener, cancellation reaping the child, and the service still healthy afterwards. It also runs
+the parts that only fail against real FFmpeg — the capability queries answering from the actual
+build, the codec libraries encoding, two passes sharing a pass log across two jobs, loudness
+measured and then applied, stills and joining.
+
+Its first check is that the generated clip has both video and audio. That is not ceremony: until
+the clip had a soundtrack, every audio assertion below it passed vacuously, and the first thing
+that named an audio stream failed on the media rather than on the code.
 
 **`--sandboxed` is the one that proves the descriptor design.** All three processes run with the
 shipped entitlements, converting a file outside every container. The app is granted that directory

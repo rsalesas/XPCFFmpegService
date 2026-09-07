@@ -107,6 +107,7 @@
 		C0FFEE000000000000000013 /* XPCFFmpegServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12513F92416B02800F0BEAF /* XPCFFmpegServices.swift */; };
 		C0FFEE000000000000000014 /* FFmpegTaskProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = E167783E243C57E3001AC285 /* FFmpegTaskProcess.swift */; };
 		C0FFEE000000000000000015 /* MutexSynchronized.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A08A01619A4D23978A9DCA /* MutexSynchronized.swift */; };
+		F00D00000000000000000002 /* JSONValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00D00000000000000000001 /* JSONValidationTests.swift */; };
 		C0FFEE000000000000000016 /* JSONValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494208C9043A4A16A5B9AC9B /* JSONValidation.swift */; };
 		C0FFEE000000000000000017 /* URLExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36485B64A6D420DBCE83037 /* URLExtensions.swift */; };
 		C0FFEE000000000000000010 /* StubTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000D /* StubTask.swift */; };
@@ -321,6 +322,7 @@
 		C0FFEE000000000000000001 /* XPCFFmpegServiceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XPCFFmpegServiceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0FFEE00000000000000000D /* StubTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubTask.swift; sourceTree = "<group>"; };
 		F4A3E500000000000000000A /* PipeFramingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeFramingTests.swift; sourceTree = "<group>"; };
+		F00D00000000000000000001 /* JSONValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValidationTests.swift; sourceTree = "<group>"; };
 		C0FFEE00000000000000000E /* FFmpegTaskProcessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegTaskProcessTests.swift; sourceTree = "<group>"; };
 		C0FFEE00000000000000000F /* XPCFFmpegInvokeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCFFmpegInvokeServiceTests.swift; sourceTree = "<group>"; };
 		FF7E57000000000000000001 /* FFmpegTaskTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FFmpegTaskTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -589,6 +591,7 @@
 			children = (
 				C0FFEE00000000000000000D /* StubTask.swift */,
 				F4A3E500000000000000000A /* PipeFramingTests.swift */,
+				F00D00000000000000000001 /* JSONValidationTests.swift */,
 				C0FFEE00000000000000000E /* FFmpegTaskProcessTests.swift */,
 				C0FFEE00000000000000000F /* XPCFFmpegInvokeServiceTests.swift */,
 			);
@@ -892,6 +895,7 @@
 				C0FFEE000000000000000017 /* URLExtensions.swift in Sources */,
 				C0FFEE000000000000000010 /* StubTask.swift in Sources */,
 				F4A3E500000000000000000B /* PipeFramingTests.swift in Sources */,
+				F00D00000000000000000002 /* JSONValidationTests.swift in Sources */,
 				C0FFEE000000000000000011 /* FFmpegTaskProcessTests.swift in Sources */,
 				C0FFEE000000000000000012 /* XPCFFmpegInvokeServiceTests.swift in Sources */,
 			);

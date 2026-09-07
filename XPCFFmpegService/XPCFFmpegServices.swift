@@ -35,6 +35,33 @@ class XPCFFmpegInvokeService: XPCServiceListenerDelegate, XPCFFmpegInvokeProtoco
         super.init(interface: XPCFFmpegInterfaces.invoke)
     }
 
+    /// Removes scratch directories nothing is coming back for.
+    ///
+    /// A retained scratch directory is cleared up by the pass that says it is the last one. If
+    /// that pass never runs - the client went away between the two - nobody clears it up, so an
+    /// hour is treated as long enough to be sure. Nothing else writes here, and the paths are
+    /// named from a UUID, so this cannot reach anything a caller owns.
+    static func sweepStaleScratch() {
+        let manager = FileManager.default
+        let cutoff = Date().addingTimeInterval(-3600)
+
+        guard let entries = try? manager.contentsOfDirectory(
+                at: manager.temporaryDirectory,
+                includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey]) else {
+            return
+        }
+
+        for entry in entries where entry.lastPathComponent.hasPrefix("scratch-") {
+            let values = try? entry.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
+            guard values?.isDirectory == true,
+                  let modified = values?.contentModificationDate, modified < cutoff else {
+                continue
+            }
+
+            try? manager.removeItem(at: entry)
+        }
+    }
+
     func invoke(jobID: String, endpoint: NSXPCListenerEndpoint, request: FFmpegRequest,
                 fileTokens: [String], fileHandles: [FileHandle], reply handler: @escaping (CompletionHandler)) {
 
@@ -57,10 +84,38 @@ class XPCFFmpegInvokeService: XPCServiceListenerDelegate, XPCFFmpegInvokeProtoco
             numbers[token] = String(childDescriptor)
         }
 
+        // A scratch token becomes a path in this service's own container. FFmpegTask inherits our
+        // sandbox, so somewhere we may write is somewhere it may write - and it is the only way to
+        // give ffmpeg a filename for the handful of options that will not take a descriptor.
+        //
+        // The directory is named by the token rather than by the job, because a two-pass encode is
+        // two jobs sharing one pass log. Which of them clears it up is the token's business, not
+        // this method's.
+        XPCFFmpegInvokeService.sweepStaleScratch()
+
+        var scratchDirectories: [String : URL] = [:]
+        var retainedScratch = false
+
         var arguments: [String] = []
         arguments.reserveCapacity(request.arguments.count)
 
         for argument in request.arguments {
+            if let scratch = FFmpegRequest.scratch(from: argument) {
+                let directory = scratchDirectories[scratch.id]
+                    ?? FileManager.default.temporaryDirectory
+                        .appendingPathComponent("scratch-\(scratch.id)", isDirectory: true)
+
+                if scratchDirectories[scratch.id] == nil {
+                    try? FileManager.default.createDirectory(at: directory,
+                                                             withIntermediateDirectories: true)
+                    scratchDirectories[scratch.id] = directory
+                }
+
+                retainedScratch = retainedScratch || scratch.isRetained
+                arguments.append(directory.appendingPathComponent("pass").path)
+                continue
+            }
+
             guard argument.hasPrefix(FFmpegRequest.tokenPrefix) else {
                 arguments.append(argument)
                 continue
@@ -94,6 +149,15 @@ class XPCFFmpegInvokeService: XPCServiceListenerDelegate, XPCFFmpegInvokeProtoco
                                                   gracePeriod: gracePeriod ?? 2.0,
                                                   completionHandler: { [weak self] result in
             self?.finish(jobID: jobID)
+
+            // Whatever the job scribbled goes with it, unless a later pass still needs it.
+            // Removed on every other path, cancelled and failed included, since a half-written
+            // pass log is worse than none - and a cancelled first pass has no second pass coming.
+            if !retainedScratch || (try? result.get()) == nil {
+                for directory in scratchDirectories.values {
+                    try? FileManager.default.removeItem(at: directory)
+                }
+            }
 
             switch result {
             case .success(let object):
