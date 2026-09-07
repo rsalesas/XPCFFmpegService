@@ -24,7 +24,7 @@ DERIVED="${TMPDIR:-/tmp}"; DERIVED="${DERIVED%/}/XPCFFmpegFixtures"
 MODE="${1:-check}"
 
 VERBS=(version license protocols formats muxers demuxers devices bsfs codecs
-       decoders sample_fmts colors pix_fmts layouts filters)
+       decoders encoders sample_fmts colors pix_fmts layouts filters)
 
 # What the captured output actually depends on: the FFmpeg source, the flags it is configured and
 # built with, and the parsers that read what it prints. Nothing else can change these files.
@@ -58,6 +58,8 @@ TASK="$DERIVED/task"
 cp "$DERIVED/Build/Products/Debug/FFmpegTask" "$TASK"
 codesign -f -s - "$TASK" 2>/dev/null
 
+BREW_PREFIX="$(brew --prefix)"
+
 # The capture hook makes PipeConnector relay raw bytes instead of running the output handler,
 # which is the only way to see what FFmpeg actually printed.
 CAPTURED="$DERIVED/captured"
@@ -68,11 +70,14 @@ for verb in "${VERBS[@]}"; do
         echo "  WARNING: -$verb produced nothing; is the capture hook present in PipeConnector?"
     fi
 
-    # -version echoes the configure line, which carries this machine's checkout and build
-    # directories. Left alone, every clone would see spurious drift. The paths are replaced rather
-    # than removed so they are still absolute, which is what the parser is expected to strip.
+    # -version echoes the configure line, which carries this machine's checkout, build and
+    # Homebrew directories - and Homebrew lives under /opt/homebrew on Apple Silicon and
+    # /usr/local on Intel. Left alone, every clone would see spurious drift. The paths are
+    # replaced rather than removed so they are still absolute, which is what the parser is
+    # expected to strip.
     sed -i '' -E -e "s|--prefix=[^ ]*|--prefix=/BUILD/Products/Debug|g" \
-                     -e "s|$ROOT|/PROJECT|g" "$CAPTURED/$verb.txt"
+                     -e "s|$ROOT|/PROJECT|g" \
+                     -e "s|$BREW_PREFIX|/HOMEBREW|g" "$CAPTURED/$verb.txt"
 done
 
 DRIFTED=0

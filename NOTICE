@@ -21,19 +21,42 @@ The configuration used here — see the *Make FFmpeg* build phase — passes `--
 FFmpeg builds under the LGPL.
 
 
-x264 and x265 are fetched at build time
----------------------------------------
+The codec libraries are fetched at build time
+---------------------------------------------
 
-The build copies `libx264.a` and `libx265.a` out of Homebrew. They are **GPL v2 or later**, are not
-redistributed in this repository, and are only present if you build with `--enable-libx264` and
-`--enable-libx265`.
+The build copies static archives out of Homebrew — see `CODEC_LIBRARIES` in the *Make FFmpeg* build
+phase, which is the list that decides this. None of them is redistributed in this repository, and
+each is present only because the matching `--enable-` flag is passed.
+
+| Library            | Homebrew formula | Licence                       |
+|--------------------|------------------|-------------------------------|
+| x264               | `x264`           | GPL v2 or later               |
+| x265               | `x265`           | GPL v2 or later               |
+| LAME (mp3)         | `lame`           | LGPL v2.1 or later            |
+| libvpx (VP8/VP9)   | `libvpx`         | BSD 3-clause                  |
+| libopus            | `opus`           | BSD 3-clause                  |
+| libogg             | `libogg`         | BSD 3-clause                  |
+| libvorbis          | `libvorbis`      | BSD 3-clause                  |
+| libaom (AV1)       | `aom`            | BSD 2-clause + patent grant   |
+| libvmaf            | `libvmaf`        | BSD 2-clause + patent grant   |
+
+Only x264 and x265 are copyleft. Everything else on that list is permissive and adds no obligation
+of its own, so the outcome below is set by x264, x265 and FFmpeg's own `--enable-gpl`, exactly as it
+was before those libraries were added.
+
+`zlib` and `bz2` also come in, from the macOS SDK rather than Homebrew, under the zlib and BSD
+licences respectively.
+
+Nothing non-free is on that list, and nothing non-free belongs on it. `libfdk-aac` in particular
+produces better AAC than the native encoder but is distributed under terms the GPL cannot absorb,
+which would make the binary undistributable rather than merely copyleft.
 
 
 A built FFmpegTask binary is GPL v3
 -----------------------------------
 
-This is the one that has consequences. FFmpegTask statically links FFmpeg, x264 and x265, so the
-**binary** is a combined work and must be distributed under the GPL — regardless of the MIT licence
+This is the one that has consequences. FFmpegTask statically links FFmpeg and every library in the
+table above, so the **binary** is a combined work and must be distributed under the GPL — regardless of the MIT licence
 on the sources that went into it. Shipping `XPCFFmpegService.xpc` inside an application means
 distributing that binary, with the obligations that carries: preserve the notices, ship the licence
 text, and make the corresponding source available. This repository, being public, is that source.
@@ -48,4 +71,6 @@ publish its own source. The reasoning is in FFmpegTask/README.md.
 
 If you would rather not ship GPL code at all, build FFmpeg without `--enable-gpl`,
 `--enable-version3`, `--enable-libx264` and `--enable-libx265`, and use the VideoToolbox encoders.
-The MIT sources here are unchanged by that choice; only what they link against changes.
+The permissive libraries in the table can all stay: LAME, libvpx, libopus, libvorbis and libaom are
+LGPL or BSD, so an LGPL FFmpeg build keeps mp3, VP8/VP9, Opus, Vorbis and AV1 encoding. The MIT
+sources here are unchanged by that choice; only what they link against changes.

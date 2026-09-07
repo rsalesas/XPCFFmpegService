@@ -22,7 +22,7 @@ try await ffmpeg.convert(Conversion(from: source, to: destination, video: .h264(
 
 ```bash
 git submodule update --init
-brew install nasm pkg-config x264 x265
+brew install nasm pkg-config x264 x265 lame libvpx opus libogg libvorbis aom libvmaf
 xcodebuild -project XPCFFmpegService.xcodeproj -scheme TestXPCFFmpegService -configuration Debug
 ```
 
@@ -45,8 +45,9 @@ The first build compiles FFmpeg from source and takes a few minutes. See
 ## Licensing
 
 This project's source is **MIT** — see [LICENSE](LICENSE). A built `FFmpegTask` binary statically
-links FFmpeg, x264 and x265 and is therefore GPL v3; nothing else in the project contains FFmpeg
-code. Keeping FFmpeg in its own process is what makes that true, and means an app using this service
+links FFmpeg, x264 and x265 and is therefore GPL v3; the other codec libraries it links (LAME,
+libvpx, libopus, libvorbis, libaom) are LGPL or BSD and add nothing to that. Nothing else in the
+project contains FFmpeg code. Keeping FFmpeg in its own process is what makes that true, and means an app using this service
 does not have to publish its own source. See [NOTICE](NOTICE) for the boundary, and
 [FFmpegTask/README.md](FFmpegTask/README.md#licensing--and-why-ffmpeg-lives-in-its-own-process) for
 the reasoning.

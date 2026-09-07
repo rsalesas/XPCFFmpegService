@@ -466,22 +466,4 @@ Filters:
  .. agraphmonitor     A->V       Show various filtergraph stats.
  .. ahistogram        A->V       Convert input audio to histogram video output.
  .. aphasemeter       A->N       Convert input audio to phase meter video output.
- .S avectorscope      A->V       Convert input audio to vectorscope video output.
- .. concat            N->N       Concatenate audio and video streams.
- .. showcqt           A->V       Convert input audio to a CQT (Constant/Clamped Q Transform) spectrum video output.
- .S showcwt           A->V       Convert input audio to a CWT (Continuous Wavelet Transform) spectrum video output.
- .. showfreqs         A->V       Convert input audio to a frequencies video output.
- .S showspatial       A->V       Convert input audio to a spatial video output.
- .S showspectrum      A->V       Convert input audio to a spectrum video output.
- .S showspectrumpic   A->V       Convert input audio to a spectrum video output single picture.
- .. showvolume        A->V       Convert input audio volume to video output.
- .. showwaves         A->V       Convert input audio to a video output.
- .. showwavespic      A->V       Convert input audio to a video output single picture.
- .. spectrumsynth     VV->A      Convert input spectrum videos to audio output.
- .. avsynctest        |->AV      Generate an Audio Video Sync Test.
- .. amovie            |->N       Read audio from a movie source.
- .. movie             |->N       Read from a movie source.
- .. abuffer           |->A       Buffer audio frames, and make them accessible to the filterchain.
- .. buffer            |->V       Buffer video frames, and make them accessible to the filterchain.
- .. abuffersink       A->|       Buffer audio frames, and make them available to the end of the filter graph.
- .. buffersink        V->|       Buffer video frames, and make them available to the end of the filter graph.
+ .S avectorscope      A->V       Convert input audio to vec

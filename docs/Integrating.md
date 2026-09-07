@@ -74,13 +74,16 @@ The source of this project is **MIT** (`LICENSE`). What you link decides what yo
 
 - **A built `FFmpegTask` is GPL v3** — it statically links FFmpeg, x264 and x265. Shipping the
   `.xpc` inside your app means redistributing it, so preserve its notices, include the licence text,
-  and point at this repository as the corresponding source.
+  and point at this repository as the corresponding source. The other codec libraries it links —
+  LAME, libvpx, libopus, libvorbis, libaom — are LGPL or BSD and change none of this; `NOTICE` has
+  the full table.
 - **Nothing else contains FFmpeg code.** Your app, the XPC service and `XPCFFmpeg.framework` have
   zero FFmpeg symbols. That separation is why **an app using this service does not have to publish
   its own source**.
 - **Building FFmpeg under the LGPL removes the GPL entirely** — drop `--enable-gpl`,
   `--enable-version3`, `--enable-libx264` and `--enable-libx265` and use the VideoToolbox encoders.
-  The MIT sources are unchanged; only what they link against is.
+  The permissive libraries can stay, so you keep mp3, VP8/VP9, Opus, Vorbis and AV1 encoding. The
+  MIT sources are unchanged; only what they link against is.
 
 What is left is yours rather than the service's: understand the licence you are redistributing under
 and how it sits with your distribution channel. Direct or notarised, it does not arise. Through an

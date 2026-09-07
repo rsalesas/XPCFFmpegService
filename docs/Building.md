@@ -9,7 +9,7 @@ Xcode and its command line tools, plus four Homebrew packages. The build refuses
 message naming whichever is missing, so you do not have to get this right in advance:
 
 ```bash
-brew install nasm pkg-config x264 x265
+brew install nasm pkg-config x264 x265 lame libvpx opus libogg libvorbis aom libvmaf
 ```
 
 The FFmpeg submodule must be present:
@@ -44,14 +44,27 @@ There are also SwiftPM schemes for the three packages — `XPCFFmpeg`, `XPCFFmpe
 ## What the FFmpeg build phase does
 
 `FFmpegTask` carries a *Make FFmpeg* shell phase that runs before compilation. It checks the
-prerequisites, copies `libx264.a` and `libx265.a` out of Homebrew into `lib/`, then configures and
-builds FFmpeg with:
+prerequisites, copies each codec library's static archive out of Homebrew into `lib/`, then
+configures and builds FFmpeg with:
 
 ```
 --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3
---enable-libx264 --enable-libx265 --disable-programs --disable-doc
---disable-sdl2 --disable-bzlib --disable-xlib --disable-zlib --disable-libxcb
+--enable-libx264 --enable-libx265 --enable-libmp3lame --enable-libvpx
+--enable-libopus --enable-libvorbis --enable-libaom
+--disable-programs --disable-doc --disable-sdl2 --disable-xlib --disable-libxcb
 ```
+
+The codec libraries are listed once, in `CODEC_LIBRARIES` at the top of that phase, as
+`formula:archive` pairs. Adding one means three edits, not one: the pair goes in that list, the
+`--enable-` flag goes in the configure line, and `-l<name>` goes in `OTHER_LDFLAGS` on the
+`FFmpegTask` target so the final link can resolve it. It also belongs in `NOTICE`, since what you
+may ship is decided by what you link.
+
+Two details in that phase are worth knowing about if you change it. Not every formula ships a
+pkg-config file — `lame` does not — so the phase passes each prefix to configure as `-I` and `-L`
+in addition to building `PKG_CONFIG_PATH`. And `configure` and `make` are checked explicitly: a
+failing configure used to be ignored, which meant the phase quietly rebuilt against whatever
+configuration was left over from the previous run and reported success.
 
 `--disable-programs` matters: no `ffmpeg` or `ffprobe` binary is produced. FFmpegTask links the
 libraries and compiles `fftools/*.c` directly, which is why the header search path points at the

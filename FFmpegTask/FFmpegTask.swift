@@ -30,12 +30,12 @@ public class FFmpegTask {
 
     // Flags for running processes
     private static let ValidRequests = ["-ffmpeg", "-ffprobe", "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
-                                        "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
+                                        "-codecs", "-decoders", "-encoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters"]
     private static let FFmpegFlags = ["-hide_banner", "-nostats", "-loglevel", "repeat+level+warning", "-nostdin"]
     private static let FFprobeFlags = ["-hide_banner", "-loglevel", "repeat+level+warning", "-print_format", "json", "-sexagesimal", "-noshow_private_data", ]
     private static let InvalidFlags = ["-version", "-L", "-h", "-?", "-help", "--help", "-cpuflags", "-sources", "-sinks", "-byte_binary_prefix",
                                        "-license", "-version", "-protocols", "-formats", "-muxers", "-demuxers", "-devices", "-bsfs",
-                                       "-codecs", "-decoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters",
+                                       "-codecs", "-decoders", "-encoders", "-sample_fmts", "-colors", "-pix_fmts", "-layouts", "-filters",
                                        /* Disable non complex filters */ "-filter", "-vf", "-af"]
         
     
@@ -157,6 +157,9 @@ public class FFmpegTask {
             
         case "-decoders":
             return invokeFFmpeg(argument: request, handler: FFmpegDecoders.self)
+            
+        case "-encoders":
+            return invokeFFmpeg(argument: request, handler: FFmpegEncoders.self)
             
         case "-sample_fmts":
             return invokeFFmpeg(argument: request, handler: FFmpegSampleFormats.self)

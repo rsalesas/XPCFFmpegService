@@ -148,11 +148,54 @@ do {
 `localizedDescription` prefers FFmpeg's own last error over a generic service message, so
 `error.localizedDescription` is usually the right thing to show a user directly.
 
-## Capabilities and the escape hatch
+## Capabilities
+
+What this FFmpeg build can do is a question, not a job. These take no files, report no progress and
+answer from a single round trip:
 
 ```swift
-let version = try await ffmpeg.version()      // FFmpegVersion
+let version = try await ffmpeg.version()          // FFmpegVersion
+let license = try await ffmpeg.license()          // the FFmpeg build's own licence text
 ```
+
+Everything a conversion can name has a query behind it:
+
+| Query | Returns | Names what |
+|---|---|---|
+| `codecs()` | `[Codec]` | the codecs this build knows |
+| `encoders()` | `[Coder]` | `VideoCodec.other` / `AudioCodec.other` |
+| `decoders()` | `[Coder]` | what it can read |
+| `formats()` `muxers()` `demuxers()` `devices()` | `[ContainerFormat]` | `Container` |
+| `filters()` | `[Filter]` | a `FilterGraph` |
+| `pixelFormats()` | `[PixelFormat]` | `VideoSettings.pixelFormat` |
+| `sampleFormats()` | `[SampleFormat]` | `-sample_fmt` |
+| `channelLayouts()` | `ChannelLayouts` | channel arrangements |
+| `protocols()` | `Protocols` | URL schemes (see the caveat below) |
+| `bitstreamFilters()` | `[String]` | `-bsf` |
+| `colors()` | `[NamedColor]` | colours in filter arguments |
+
+The distinction that matters is `codecs()` against `encoders()`. A codec being listed does not mean
+this build can write it — mp3 is decode-only unless FFmpeg was configured with LAME — so
+`canEncode` is the question to ask before offering a format to a user:
+
+```swift
+let writable = try await ffmpeg.codecs().filter { $0.canEncode && $0.kind == .audio }
+```
+
+And when you want a specific implementation rather than a codec — hardware over software, say —
+`encoders()` is what lists the names:
+
+```swift
+let encoders = try await ffmpeg.encoders()
+let hardware = encoders.contains { $0.name == "hevc_videotoolbox" }
+let settings = VideoSettings(codec: hardware ? .other("hevc_videotoolbox") : .hevc)
+```
+
+`protocols()` reports what FFmpeg was compiled with, which is more than this API can currently
+reach: a `Conversion` opens every file in the client and passes a descriptor, so `http` appearing
+in that list does not make a URL usable as an `Input`.
+
+## The escape hatch
 
 For anything the typed model does not cover, pass raw arguments. Every file the request touches
 must be listed in `files` — that is how the service is given access to it:

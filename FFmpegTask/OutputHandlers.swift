@@ -376,6 +376,66 @@ struct FFmpegDecoders: FFmpegOutputHandler {
 }
 
 
+struct FFmpegEncoders: FFmpegOutputHandler {
+    // FFmpeg prints encoders and decoders through the same routine (fftools/opt_common.c,
+    // print_codecs) with the same flag legend, so this is FFmpegDecoders with a different key.
+    static let RegExPattern = #"^\s(?<Support>[VASFXBD\.]{6})\s+(?<Format>[^=]\S+)\s+(?<Description>.+)$"#  // -encoders
+
+    /*
+     Values for "Support"
+     V..... = Video
+     A..... = Audio
+     S..... = Subtitle
+     .F.... = Frame-level multithreading
+     ..S... = Slice-level multithreading
+     ...X.. = Codec is experimental
+     ....B. = Supports draw_horiz_band
+     .....D = Supports direct rendering method 1
+     */
+    enum Support : String, Encodable {
+        case video
+        case audio
+        case subtitle
+        case frameLevelMultithreading
+        case sliceLevelMultithreading
+        case experimentalCodec
+        case drawHorizontalBandSupported
+        case directRenderingMethod1Supported
+    }
+
+    struct Encoder: Encodable {
+        let format: String
+        let description: String
+        let support: [Support]
+    }
+
+    public let encoders: [Encoder]
+
+    init?(from: Data) {
+        guard let matchRegEx = MatchRegularExpression(in: from, pattern: FFmpegEncoders.RegExPattern, options: .anchorsMatchLines), matchRegEx.matches.count >= 1 else {
+            os_log("Invalid ffmpeg encoder output; unexpected format", type: OSLogType.error)
+            return nil
+        }
+
+        var encoders: [Encoder] = []
+
+        for index in 0...matchRegEx.matches.count - 1 {
+            let format = matchRegEx.matches[index, "Format"]
+            let description = matchRegEx.matches[index, "Description"]
+            let support = Array(matchRegEx.matches[index, "Support"])
+
+            var supportFlags: [Support] = ((support[0] == "V") ? [.video] : ((support[0] == "A") ? [.audio] : ((support[0] == "S") ? [.subtitle] : [])))
+            supportFlags += ((support[1] == "F") ? [.frameLevelMultithreading] : []) + ((support[2] == "S") ? [.sliceLevelMultithreading] : []) + ((support[3] == "X") ? [.experimentalCodec] : [])
+            supportFlags += ((support[4] == "B") ? [.drawHorizontalBandSupported] : []) + ((support[5] == "D") ? [.directRenderingMethod1Supported] : [])
+
+            encoders.append(Encoder(format: format, description: description, support: supportFlags))
+        }
+        
+        self.encoders = encoders
+    }
+}
+
+
 struct FFmpegFilters: FFmpegOutputHandler {
     // FFmpeg prints " %c%c %-17s %-10s %s" (fftools/opt_common.c, show_filters): two flag
     // characters. The command-support column that used to make a third is gone.

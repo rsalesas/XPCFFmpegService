@@ -17,6 +17,10 @@ final class OutputHandlerDriftTests: XCTestCase {
         try assertEveryRowMatches(FFmpegDecoders.RegExPattern, verb: "decoders", after: " ---")
     }
 
+    func testEncodersAccountsForEveryRow() throws {
+        try assertEveryRowMatches(FFmpegEncoders.RegExPattern, verb: "encoders", after: " ---")
+    }
+
     func testFormatsAccountsForEveryRow() throws {
         try assertEveryRowMatches(FFmpegFormats.RegExPattern, verb: "formats", after: " ---")
     }
@@ -62,6 +66,7 @@ final class OutputHandlerDriftTests: XCTestCase {
         let parsers: [(String, (Data) -> Data?)] = [
             ("codecs",      { FFmpegCodecs(from: $0)?.JSON }),
             ("decoders",    { FFmpegDecoders(from: $0)?.JSON }),
+            ("encoders",    { FFmpegEncoders(from: $0)?.JSON }),
             ("formats",     { FFmpegFormats(from: $0)?.JSON }),
             ("muxers",      { FFmpegFormats(from: $0)?.JSON }),
             ("demuxers",    { FFmpegFormats(from: $0)?.JSON }),

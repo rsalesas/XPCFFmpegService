@@ -110,7 +110,7 @@ public final class FFmpeg {
     /// `files`; each is opened here and the path it appears under in `arguments` is replaced with
     /// ffmpeg's "-fd N ... fd:" form, since the service reaches files only through descriptors.
     public func run(request verb: String, arguments: [String], files: [URL] = []) throws -> Job {
-        var built = try RequestBuilder.raw(verb: verb, arguments: arguments, files: files)
+        let built = try RequestBuilder.raw(verb: verb, arguments: arguments, files: files)
         return start(built, totalDuration: nil)
     }
 
@@ -120,7 +120,9 @@ public final class FFmpeg {
         return try? await probe(url).duration
     }
 
-    private func start(_ built: RequestBuilder.Built, totalDuration: TimeInterval?) -> Job {
+    /// Internal rather than private so the capability queries in Capabilities.swift can reach
+    /// it: they are jobs like any other, just ones that carry no files and report no progress.
+    func start(_ built: RequestBuilder.Built, totalDuration: TimeInterval?) -> Job {
         let request = built.request
         let placeholders = built.placeholders
         let id = UUID().uuidString

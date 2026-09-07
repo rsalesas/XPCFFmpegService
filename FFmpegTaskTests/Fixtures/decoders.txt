@@ -18,6 +18,7 @@ Decoders:
  V....D amv                  AMV Video
  V....D anm                  Deluxe Paint Animation
  V....D ansi                 ASCII/ANSI art
+ VF...D apng                 APNG (Animated Portable Network Graphics) image
  VFS..D apv                  Advanced Professional Video
  V....D arbc                 Gryphon's Anim Compressor
  V....D argo                 Argonaut Games Video
@@ -25,6 +26,7 @@ Decoders:
  V....D asv2                 ASUS V2
  V....D aura                 Auravision AURA
  V....D aura2                Auravision Aura 2
+ V....D libaom-av1           libaom AV1 (codec av1)
  V....D av1                  Alliance for Open Media AV1
  V....D avrn                 Avid AVI Codec
  V....D avrp                 Avid 1:1 10-bit RGB Packer
@@ -60,19 +62,24 @@ Decoders:
  VF...D dpx                  DPX (Digital Picture Exchange) image
  V....D dsicinvideo          Delphine Software International CIN video
  VFS..D dvvideo              DV (Digital Video)
+ V....D dxa                  Feeble Files/ScummVM DXA
  VF...D dxtory               Dxtory
  VFS..D dxv                  Resolume DXV
  V....D escape124            Escape 124
  V....D escape130            Escape 130
+ VFS..D exr                  OpenEXR image
  VFS..D ffv1                 FFmpeg video codec #1
  VF..BD ffvhuff              Huffyuv FFmpeg variant
  V.S..D fic                  Mirillis FIC
  V....D fits                 Flexible Image Transport System
+ V....D flashsv              Flash Screen Video v1
+ V....D flashsv2             Flash Screen Video v2
  V....D flic                 Autodesk Animator Flic video
  V...BD flv                  FLV / Sorenson Spark / Sorenson H.263 (Flash Video) (codec flv1)
  V....D fmvc                 FM Screen Capture Codec
  VF...D fraps                Fraps
  V....D frwu                 Forward Uncompressed
+ V....D g2m                  Go2Meeting
  V....D gdv                  Gremlin Digital Video
  V....D gem                  GEM Raster image
  V....D gif                  GIF (Graphics Interchange Format)
@@ -108,6 +115,7 @@ Decoders:
  VF...D lagarith             Lagarith lossless
  V....D lead                 LEAD MCMP
  V....D loco                 LOCO
+ V....D lscr                 LEAD Screen Capture
  V....D m101                 Matrox Uncompressed SD
  V....D eamad                Electronic Arts Madcow Video (codec mad)
  VFS..D magicyuv             MagicYUV video
@@ -124,6 +132,7 @@ Decoders:
  V.S.BD mpegvideo            MPEG-1 video (codec mpeg2video)
  VF..BD mpeg4                MPEG-4 part 2
  V....D msa1                 MS ATC Screen
+ V....D mscc                 Mandsoft Screen Capture Codec
  V...BD msmpeg4v1            MPEG-4 part 2 Microsoft variant version 1
  V...BD msmpeg4v2            MPEG-4 part 2 Microsoft variant version 2
  V...BD msmpeg4              MPEG-4 part 2 Microsoft variant version 3 (codec msmpeg4v3)
@@ -138,6 +147,8 @@ Decoders:
  V....D mvc1                 Silicon Graphics Motion Video Compressor 1
  V....D mvc2                 Silicon Graphics Motion Video Compressor 2
  V....D mvdv                 MidiVid VQ
+ V....D mvha                 MidiVid Archive Codec
+ V....D mwsc                 MatchWare Screen Capture Codec
  V....D mxpeg                Mobotix MxPEG video
  VF...D notchlc              NotchLC
  V....D nuv                  NuppelVideo/RTJPEG
@@ -145,6 +156,7 @@ Decoders:
  V....D pam                  PAM (Portable AnyMap) image
  V....D pbm                  PBM (Portable BitMap) image
  V....D pcx                  PC Paintbrush PCX image
+ V....D pdv                  PDV (PlayDate Video)
  V....D pfm                  PFM (Portable FloatMap) image
  V....D pgm                  PGM (Portable GrayMap) image
  V....D pgmyuv               PGMYUV (Portable GrayMap YUV) image
@@ -153,6 +165,7 @@ Decoders:
  VF...D photocd              Kodak Photo CD
  V....D pictor               Pictor/PC Paint
  VF...D pixlet               Apple Pixlet
+ VF...D png                  PNG (Portable Network Graphics) image
  V....D ppm                  PPM (Portable PixelMap) image
  VFS..D prores               Apple ProRes (iCodec Pro)
  VFS..D prores_raw           Apple ProRes RAW
@@ -165,10 +178,12 @@ Decoders:
  V....D qtrle                QuickTime Animation (RLE) video
  V....D r10k                 AJA Kona 10-bit RGB Codec
  V....D r210                 Uncompressed RGB 10-bit
+ V....D rasc                 RemotelyAnywhere Screen Capture
  V..... rawvideo             raw video
  V....D rl2                  RL2 video
  V....D roqvideo             id RoQ video (codec roq)
  V....D rpza                 QuickTime video (RPZA)
+ V....D rscc                 innoHeim/Rsupport Screen Capture Codec
  VF...D rtv1                 RTV1 (RivaTuner Video)
  V....D rv10                 RealVideo 1.0
  V....D rv20                 RealVideo 2.0
@@ -177,6 +192,7 @@ Decoders:
  V.S..D rv60                 RealVideo 6.0
  V....D sanm                 LucasArts SANM/Smush video
  V....D scpr                 ScreenPressor
+ V....D screenpresso         Screenpresso
  V....D sga                  Digital Pictures SGA Video
  V....D sgi                  SGI image
  V....D sgirle               Silicon Graphics RLE 8-bit video
@@ -188,11 +204,13 @@ Decoders:
  V....D snow                 Snow
  V....D sp5x                 Sunplus JPEG (SP5X)
  VFS..D speedhq              NewTek SpeedHQ
+ V....D srgc                 Screen Recorder Gold Codec
  V....D sunrast              Sun Rasterfile image
  V....D svq1                 Sorenson Vector Quantizer 1 / Sorenson Video 1 / SVQ1
  V...BD svq3                 Sorenson Vector Quantizer 3 / Sorenson Video 3 / SVQ3
  V....D targa                Truevision Targa image
  V....D targa_y216           Pinnacle TARGA CineWave YUV16
+ V....D tdsc                 TDSC
  V....D eatgq                Electronic Arts TGQ video (codec tgq)
  V....D eatgv                Electronic Arts TGV video (codec tgv)
  VF..BD theora               Theora
@@ -204,6 +222,7 @@ Decoders:
  V....D truemotion1          Duck TrueMotion 1.0
  V....D truemotion2          Duck TrueMotion 2.0
  V....D truemotion2rt        Duck TrueMotion 2.0 Real Time
+ V....D camtasia             TechSmith Screen Capture Codec (codec tscc)
  V....D tscc2                TechSmith Screen Codec 2
  V....D txd                  Renderware TXD (TeXture Dictionary) image
  V....D ultimotion           IBM UltiMotion (codec ulti)
@@ -229,10 +248,13 @@ Decoders:
  V....D vp6f                 On2 VP6 (Flash version)
  V....D vp7                  On2 VP7
  VFS..D vp8                  On2 VP8
+ V....D libvpx               libvpx VP8 (codec vp8)
  VFS..D vp9                  Google VP9
+ V..... libvpx-vp9           libvpx VP9 (codec vp9)
  V....D vqc                  ViewQuest VQC
  V....D vvc                  VVC (Versatile Video Coding)
  VF...D wbmp                 WBMP (Wireless Application Protocol Bitmap) image
+ V....D wcmv                 WinCAM Motion Video
  VF...D webp                 WebP image
  V.S..D webp_anim            Animated WebP image
  V...BD wmv1                 Windows Media Video 7
@@ -253,6 +275,9 @@ Decoders:
  VF...D ylc                  YUY2 Lossless Codec
  V....D yop                  Psygnosis YOP Video
  V....D yuv4                 Uncompressed packed 4:2:0
+ V....D zerocodec            ZeroCodec Lossless Video
+ VF...D zlib                 LCL (LossLess Codec Library) ZLIB
+ V....D zmbv                 Zip Motion Blocks Video
  A....D 8svx_exp             8SVX exponential
  A....D 8svx_fib             8SVX fibonacci
  A....D aac                  AAC (Advanced Audio Coding)
@@ -408,6 +433,7 @@ Decoders:
  A....D mpc8                 Musepack SV8 (codec musepack8)
  A....D nellymoser           Nellymoser Asao
  A....D opus                 Opus
+ A....D libopus              libopus Opus (codec opus)
  A....D osq                  OSQ (Original Sound Quality)
  A....D paf_audio            Amazing Studio Packed Animation File Audio
  A....D pcm_alaw             PCM A-law / G.711 A-law
@@ -474,6 +500,7 @@ Decoders:
  A....D twinvq               VQF TwinVQ
  A....D vmdaudio             Sierra VMD audio
  A....D vorbis               Vorbis
+ A..... libvorbis            libvorbis (codec vorbis)
  A....D wady_dpcm            DPCM Marble WADY
  A....D wavarc               Waveform Archiver
  A....D wavesynth            Wave synthesis pseudo-codec
