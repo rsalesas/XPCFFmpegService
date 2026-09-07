@@ -210,12 +210,16 @@ public struct LoudnessNormalization: Equatable {
 
 
 /// What a `loudnorm` measuring pass found. Printed by ffmpeg as JSON on stderr.
-public struct LoudnessMeasurement: Equatable {
-    public let integrated: Double
-    public let truePeak: Double
-    public let loudnessRange: Double
-    public let threshold: Double
-    public let offset: Double
+///
+/// Internal: it travels from the measuring pass to the one that follows and no further. Nothing
+/// public hands one out or takes one, so making it public would only put a type in the interface
+/// that a caller has no way to obtain.
+struct LoudnessMeasurement: Equatable {
+    let integrated: Double
+    let truePeak: Double
+    let loudnessRange: Double
+    let threshold: Double
+    let offset: Double
 }
 
 

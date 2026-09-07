@@ -18,6 +18,25 @@ try await ffmpeg.convert(Conversion(from: source, to: destination, video: .h264(
 [Integrating](docs/Integrating.md), [Building](docs/Building.md),
 [Architecture](docs/Architecture.md), [Testing](docs/Testing.md).
 
+## What it does
+
+| | |
+|---|---|
+| **Probe** | Format, streams, colour and HDR tags, chapters — typed, not a JSON blob |
+| **Convert** | Codecs, rate control (CRF, or bitrate with a ceiling and window), size, frame rate, profile, level, tune, pixel and colour format |
+| **Two-pass** | A flag. `convert` runs ffmpeg twice and reports one continuous progress |
+| **Loudness** | `loudnorm` to a target, measured first so it actually hits it |
+| **Streams** | Per-stream overrides, subtitles, channel layouts, metadata, `-map` |
+| **Filters** | `-filter_complex` graphs; joining, thumbnails and contact sheets built on them |
+| **Progress** | Streamed as an `AsyncStream`, with a fraction and an ETA |
+| **Cancel** | `job.cancel()`, or cancel the awaiting `Task` — SIGTERM, grace, SIGKILL |
+| **Capabilities** | Fifteen queries answering from the real build: what it encodes, muxes, filters |
+| **Sandbox** | Files travel as descriptors, so a conversion works from inside an App Sandbox |
+
+Encoders compiled in: x264, x265, VideoToolbox (H.264/HEVC/ProRes), LAME, libvpx, Opus, Vorbis,
+libaom, plus AAC, ALAC and FLAC. Hardware encoding and decoding are available and never automatic —
+see [Usage](docs/Usage.md#hardware).
+
 ## Building, briefly
 
 ```bash

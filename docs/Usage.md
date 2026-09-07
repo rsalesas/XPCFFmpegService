@@ -29,6 +29,19 @@ info.format?.tags["title"]
 `MediaInfo.duration` falls back to the longest stream when the container declares none, which some
 formats genuinely do not.
 
+Streams also carry their colour tags, and know whether they are HDR:
+
+```swift
+let stream = info.videoStreams.first
+stream?.colorSpace           // "bt2020nc"
+stream?.colorTransfer        // "smpte2084" (PQ), "arib-std-b67" (HLG)
+stream?.isHighDynamicRange   // Bool
+stream?.colorProperties      // ready to hand to VideoSettings.colorProperties
+```
+
+Absent is not the same as Rec. 709 — it means the file never said, and ffmpeg will guess from the
+resolution.
+
 Ask for less, or more, with `ProbeOptions`:
 
 ```swift
@@ -36,6 +49,19 @@ try await ffmpeg.probe(url, options: ProbeOptions(showFormat: true,
                                                   showStreams: false,
                                                   showChapters: true))
 ```
+
+**Chapters** arrive only when asked for — ffprobe does not report them otherwise, so
+`info.chapters` is empty unless `showChapters` was set:
+
+```swift
+let info = try await ffmpeg.probe(url, options: ProbeOptions(showChapters: true))
+
+for chapter in info.chapters {
+    print(chapter.title ?? "untitled", chapter.start ?? 0, chapter.end ?? 0)
+}
+```
+
+`Chapter.title` reads the `title` tag, which is where files conventionally put the name.
 
 ## Converting
 
@@ -76,6 +102,19 @@ _ = try await job.value()
 `events` and `value()` are both safe to use at once, and both safe to ignore — the job runs either
 way. A stream created after the job has finished terminates immediately rather than hanging, and
 several subscribers each see every event.
+
+A `Progress` carries the frame count, rate, bitrate, bytes written, dropped and duplicated frames,
+and how far into the output it has reached. Two of its values are computed rather than reported:
+
+```swift
+p.fractionCompleted        // 0...1, only when the total duration is known
+p.estimatedTimeRemaining   // seconds, from what is left and how fast it is going
+```
+
+Both are `nil` rather than a guess when the duration is unknown — which it is unless the job came
+from `convert`, since that probes the source first. The estimate is a projection from the current
+speed, so it moves around early and settles; ffmpeg's speed over the first second of a file is not
+what it will average over the rest.
 
 `job.log` is everything FFmpeg said, kept whether or not anyone was listening, bounded to the last
 500 lines.
@@ -186,6 +225,10 @@ let settings = codec.isHardwareAccelerated
     : VideoSettings.hevc(quality: 28)
 ```
 
+`VideoSettings.h264VideoToolbox(bitrate:)` is the H.264 equivalent, and `VideoCodec` answers both
+directions: `isHardwareAccelerated` for what you have, `softwareEquivalent` for what to fall back
+to.
+
 Decoding is opt-in the same way, per input:
 
 ```swift
@@ -212,17 +255,24 @@ Subtitles are `SubtitleSettings`: `.copy` to carry them across, `.movText` for M
 survives that container), `.disabled` to drop them. Note that burning subtitles *into* the picture
 needs libass, which this build does not include — see [Building](Building.md).
 
-**Channel layout** is separate from channel count, and usually the more useful of the two:
+**Channel layout** is separate from channel count, and usually the more useful of the two —
+`2` and `stereo` are the same count but not the same request:
 
 ```swift
 AudioSettings(codec: .aac, channels: 6, channelLayout: .surround51)
 ```
+
+`AudioChannelLayout` has `.mono`, `.stereo`, `.surround51`, `.surround71`, and takes a string
+literal for anything else `channelLayouts()` lists.
 
 **Loudness** normalises to a target:
 
 ```swift
 AudioSettings(codec: .aac, loudness: .streaming)     // -16 LUFS; also .broadcastEBU, .broadcastATSC
 ```
+
+`LoudnessNormalization` also has `.broadcastEBU` (-23 LUFS) and `.broadcastATSC` (-24), or set the
+target, true-peak ceiling and range yourself.
 
 `loudnorm` is a filter, so this composes the filter graph for you — which means it cannot be
 combined with a `filterGraph` or `streamMaps` you wrote yourself. Asking for both throws
@@ -247,6 +297,9 @@ not join a clip that has a soundtrack to one that does not.
 `frame%03d.png` needs a filename pattern to fill in, and an output reached through a descriptor has
 no name.
 
+Both are ordinary `Conversion`s underneath — a still is `Output.frameLimit` of 1 with
+`Container.image` — so anything you can set on a conversion you can set on these.
+
 ## Remote inputs
 
 ```swift
@@ -254,9 +307,13 @@ Conversion(inputs: [.remote(URL(string: "https://example.com/stream.m3u8")!)],
            outputs: [Output(url: destination, container: .mp4)])
 ```
 
-The one input that is not opened here. There is nothing to open, so the URL goes to ffmpeg and the
-fetch happens inside the sandboxed helper rather than in your process. `protocols()` says which
-schemes the build understands.
+The one input that is not opened here. `Input.source` is an `InputSource` — `.file(url)`, which is
+opened in your process and travels as a descriptor, or `.remote(url)`, where there is nothing to
+open, so the URL goes to ffmpeg and the fetch happens inside the sandboxed helper instead.
+`protocols()` says which schemes the build understands.
+
+Worth being deliberate about: a remote input is fetched by the helper, under its sandbox, not
+yours — no security-scoped grant is involved in either direction.
 
 ## Errors
 
@@ -303,6 +360,10 @@ Everything a conversion can name has a query behind it:
 | `protocols()` | `Protocols` | URL schemes (see the caveat below) |
 | `bitstreamFilters()` | `[String]` | `-bsf` |
 | `colors()` | `[NamedColor]` | colours in filter arguments |
+
+Each row is typed rather than a string: a `Codec` knows its `kind` (a `MediaKind` — video, audio or
+subtitle) and whether it is lossy, lossless or intra-frame-only; a `Coder` knows its threading and
+whether it is experimental; a `ContainerFormat` knows whether it muxes, demuxes or is a device.
 
 The distinction that matters is `codecs()` against `encoders()`. A codec being listed does not mean
 this build can write it — mp3 is decode-only unless FFmpeg was configured with LAME — so
