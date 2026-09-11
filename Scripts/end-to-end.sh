@@ -63,6 +63,18 @@ if [ ! -s "$MEDIA/src.mp4" ]; then
         -y "$MEDIA/src.mp4" > /dev/null 2>&1
 fi
 
+# A standalone audio file - no video stream at all - and a standalone still image, for the input
+# side of each: everything above only ever exercises audio and stills riding along with src.mp4.
+if [ ! -s "$MEDIA/src.wav" ]; then
+    "$TASK" -ffmpeg -f lavfi -i "sine=frequency=880:duration=3" \
+        -c:a pcm_s16le \
+        -y "$MEDIA/src.wav" > /dev/null 2>&1
+fi
+if [ ! -s "$MEDIA/src.png" ]; then
+    "$TASK" -ffmpeg -f lavfi -i "color=c=blue:size=320x240" -frames:v 1 \
+        -y "$MEDIA/src.png" > /dev/null 2>&1
+fi
+
 # ---------------------------------------------------------------- entitlements
 #
 # Written here rather than committed, because the sandboxed run needs an absolute path to the

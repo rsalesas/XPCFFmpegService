@@ -9,7 +9,8 @@
 //  The unit suites all run against stubs, so this is the only thing that exercises the three
 //  processes together. Run it with Scripts/end-to-end.sh.
 //
-//  Takes one argument: a directory containing src.mp4, which the script generates.
+//  Takes one argument: a directory containing src.mp4, src.wav, and src.png, which the script
+//  generates.
 //
 import Foundation
 import XPCFFmpeg
@@ -48,6 +49,8 @@ func runningFFmpegTasks() -> Int {
 
 let media = URL(fileURLWithPath: CommandLine.arguments[1])
 let source = media.appendingPathComponent("src.mp4")
+let standaloneAudio = media.appendingPathComponent("src.wav")
+let standaloneImage = media.appendingPathComponent("src.png")
 
 let ffmpeg = FFmpeg()
 
@@ -59,6 +62,20 @@ func main() async {
         // anything naming an audio stream failed on the media rather than on the code.
         check(!info.videoStreams.isEmpty, "source has video")
         check(!info.audioStreams.isEmpty, "source has audio")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+    do {
+        let info = try await ffmpeg.probe(standaloneAudio)
+        check(info.videoStreams.isEmpty, "standalone audio source has no video")
+        check(!info.audioStreams.isEmpty, "standalone audio source has audio")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+    do {
+        let info = try await ffmpeg.probe(standaloneImage)
+        check(!info.videoStreams.isEmpty, "standalone image source decodes as a stream")
+        check(info.audioStreams.isEmpty, "standalone image source has no audio")
     } catch {
         check(false, "threw: \(error)")
     }
@@ -346,6 +363,52 @@ func main() async {
         check(version.version.contains("9."), "version \(version.version)")
         let info = try await ffmpeg.probe(source)
         check(info.duration != nil, "probe still works after everything above")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("14. a standalone audio file, with no video stream, as input")
+    do {
+        let info = try await ffmpeg.probe(standaloneAudio)
+        check(info.audioStreams.first?.channels == 1, "mono source (\(info.audioStreams.first?.channels ?? -1) channels)")
+        check(abs((info.duration ?? 0) - 3) < 0.5, "source is ~3s")
+
+        let destination = media.appendingPathComponent("e2e_audio_only.m4a")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(inputs: [Input(url: standaloneAudio)],
+                                    outputs: [Output(url: destination, container: .m4a,
+                                                     video: .disabled,
+                                                     audio: AudioSettings(codec: .aac, bitrate: .kbps(96)))])
+        _ = try await ffmpeg.convert(conversion)
+
+        let out = try await ffmpeg.probe(destination)
+        check(out.videoStreams.isEmpty, "no video materialised from nowhere")
+        check(out.audioStreams.first?.codecName == "aac", "transcoded to aac (\(out.audioStreams.first?.codecName ?? "?"))")
+        check(abs((out.duration ?? 0) - 3) < 0.5, "duration carried across (\(out.duration ?? 0))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("15. a standalone still image as input")
+    do {
+        let info = try await ffmpeg.probe(standaloneImage)
+        let stream = info.videoStreams.first
+        check(stream?.codecName == "png", "decodes as png (\(stream?.codecName ?? "?"))")
+        check(stream?.frameSize == FrameSize(width: 320, height: 240), "frame size \(stream?.frameSize.map { "\($0.width)x\($0.height)" } ?? "?")")
+
+        let destination = media.appendingPathComponent("e2e_image_to_image.jpg")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(inputs: [Input(url: standaloneImage)],
+                                    outputs: [Output(url: destination, container: .image,
+                                                     video: VideoSettings(codec: .mjpeg),
+                                                     audio: .disabled, frameLimit: 1)])
+        _ = try await ffmpeg.convert(conversion)
+        let size = fileSize(destination)
+        check(size > 0, "re-encoded image written (\(size) bytes)")
+
+        let out = try await ffmpeg.probe(destination)
+        check(out.videoStreams.first?.codecName == "mjpeg", "output decodes as mjpeg (\(out.videoStreams.first?.codecName ?? "?"))")
+        check(out.videoStreams.first?.frameSize == FrameSize(width: 320, height: 240), "frame size carried across")
     } catch {
         check(false, "threw: \(error)")
     }
