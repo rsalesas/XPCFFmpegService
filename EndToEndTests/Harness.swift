@@ -413,6 +413,222 @@ func main() async {
         check(false, "threw: \(error)")
     }
 
+    section("16. a stream override wins over the blanket setting")
+    do {
+        let destination = media.appendingPathComponent("e2e_override.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(2))],
+            outputs: [Output(url: destination,
+                             video: .h264(preset: .ultrafast),
+                             audio: AudioSettings(codec: .aac, bitrate: .kbps(32)),
+                             streamOverrides: [StreamOverride(.audio(0),
+                                 .audio(AudioSettings(codec: .aac, bitrate: .kbps(160))))])])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        let kbps = (info.audioStreams.first?.bitrate?.bitsPerSecond ?? 0) / 1000
+        check(kbps > 100, "override's 160kbps won over the blanket 32kbps (~\(kbps)kbps)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("17. metadata written to the output survives the probe")
+    do {
+        let destination = media.appendingPathComponent("e2e_metadata.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(1))],
+            outputs: [Output(url: destination, video: .h264(preset: .ultrafast), audio: .disabled,
+                             metadata: ["title": "XPCFFmpeg end-to-end"])])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(info.format?.tags["title"] == "XPCFFmpeg end-to-end",
+              "title metadata round-tripped (\(info.format?.tags["title"] ?? "?"))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("18. ffmpeg's own log lines are collected on the job")
+    do {
+        let destination = media.appendingPathComponent("e2e_joblog.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        // FFmpegTask runs at warning level by default, and a clean encode logs nothing at that
+        // level - there would be no line to see even though the plumbing works.
+        let conversion = Conversion(inputs: [Input(url: source, timeRange: .first(1))],
+                                    outputs: [Output(url: destination, video: .h264(preset: .ultrafast),
+                                                     audio: .disabled)],
+                                    additionalGlobalOptions: ["-loglevel", "repeat+level+info"])
+        let job = try ffmpeg.startConversion(conversion)
+        _ = try await job.value()
+        check(!job.log.isEmpty, "ffmpeg logged \(job.log.count) lines")
+        check(job.log.contains { !$0.message.isEmpty }, "log lines carry real text")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("19. a subtitle stream survives a real conversion")
+    do {
+        let subtitleFile = media.appendingPathComponent("e2e_subs.srt")
+        try "1\n00:00:00,000 --> 00:00:01,000\nHello from the end-to-end harness\n"
+            .write(to: subtitleFile, atomically: true, encoding: .utf8)
+
+        let destination = media.appendingPathComponent("e2e_subtitled.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(2)), Input(url: subtitleFile)],
+            outputs: [Output(url: destination, container: .mp4,
+                             video: .h264(preset: .ultrafast), audio: .disabled,
+                             subtitles: .movText)])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        let subtitleStreams = info.streams.filter { $0.kind == .subtitle }
+        check(subtitleStreams.count == 1, "one subtitle stream in the output")
+        check(subtitleStreams.first?.codecName == "mov_text",
+              "encoded as mov_text (\(subtitleStreams.first?.codecName ?? "?"))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("20. hardware-accelerated decode on the input")
+    do {
+        let destination = media.appendingPathComponent("e2e_hwdecode.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(2), hardwareAcceleration: .videoToolbox)],
+            outputs: [Output(url: destination, video: .h264(preset: .ultrafast), audio: .disabled)])
+        _ = try await ffmpeg.convert(conversion)
+        check(fileSize(destination) > 0, "decoded via videotoolbox and re-encoded (\(fileSize(destination)) bytes)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("21. forcing an input's demuxer")
+    do {
+        let destination = media.appendingPathComponent("e2e_forced_format.m4a")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: standaloneAudio, format: "wav")],
+            outputs: [Output(url: destination, container: .m4a, video: .disabled, audio: .aac())])
+        _ = try await ffmpeg.convert(conversion)
+        check(fileSize(destination) > 0, "forced demuxer still produced output (\(fileSize(destination)) bytes)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("22. the hardware encoder actually encodes")
+    do {
+        if let hardware = await ffmpeg.hardwareEncoder(for: .hevc) {
+            let destination = media.appendingPathComponent("e2e_hwencode.mp4")
+            try? FileManager.default.removeItem(at: destination)
+            let conversion = Conversion(
+                inputs: [Input(url: source, timeRange: .first(2))],
+                outputs: [Output(url: destination, video: VideoSettings(codec: hardware, bitrate: .mbps(2)),
+                                 audio: .disabled)])
+            _ = try await ffmpeg.convert(conversion)
+
+            let info = try await ffmpeg.probe(destination)
+            check(info.videoStreams.first?.codecName == "hevc",
+                  "hardware-encoded output decodes as hevc (\(info.videoStreams.first?.codecName ?? "?"))")
+        } else {
+            check(true, "no hardware HEVC encoder on this build/machine - nothing to exercise")
+        }
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("23. combining a separate audio input with a separate video input")
+    do {
+        let destination = media.appendingPathComponent("e2e_combined.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(3)), Input(url: standaloneAudio)],
+            outputs: [Output(url: destination, container: .mp4,
+                             video: .h264(preset: .ultrafast),
+                             audio: AudioSettings(codec: .aac, bitrate: .kbps(96)),
+                             streamMaps: [.video(ofInput: 0), .audio(ofInput: 1)])])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(info.videoStreams.count == 1 && info.audioStreams.count == 1,
+              "one video and one audio stream, taken from two different sources")
+        check(info.audioStreams.first?.codecName == "aac", "audio came from the second input, re-encoded to aac")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("24. the raw escape hatch runs something the typed API does not model, on a real file")
+    do {
+        // -stream_loop has no equivalent on Input, and unlike -vf/-af (which FFmpegTask refuses
+        // outright, typed API or not) it is not on the service's blocklist. lavfi sources cannot
+        // be looped - they are already generators - so this needs a real file, which is what
+        // exercises the descriptor substitution `files:` exists for.
+        let job = try ffmpeg.run(request: "-ffmpeg",
+                                 arguments: ["-stream_loop", "2", "-i", standaloneImage.path,
+                                             "-t", "1", "-f", "null", "-"],
+                                 files: [standaloneImage])
+        _ = try await job.value()
+        check(true, "raw ffmpeg invocation completed, looping a real input by its descriptor")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("25. the remaining capability queries answer too")
+    do {
+        let decoders = try await ffmpeg.decoders()
+        check(decoders.count > 100, "\(decoders.count) decoders")
+
+        let formats = try await ffmpeg.formats()
+        check(formats.contains { $0.name == "mp4" }, "mp4 format listed")
+
+        let demuxers = try await ffmpeg.demuxers()
+        check(demuxers.contains { $0.canDemux && $0.name.contains("mp4") }, "a demuxer for mp4 is listed")
+
+        let devices = try await ffmpeg.devices()
+        check(true, "devices query answered without throwing (\(devices.count) devices)")
+
+        let sampleFormats = try await ffmpeg.sampleFormats()
+        check(sampleFormats.contains { $0.name == "s16" }, "s16 sample format")
+
+        let layouts = try await ffmpeg.channelLayouts()
+        check(layouts.standard.contains { $0.name == "stereo" }, "stereo is a standard channel layout")
+
+        let bsfs = try await ffmpeg.bitstreamFilters()
+        check(bsfs.contains("aac_adtstoasc"), "aac_adtstoasc bitstream filter present")
+
+        let colors = try await ffmpeg.colors()
+        check(colors.contains { $0.name == "Blue" && $0.rgb.hasPrefix("#") }, "named colours decoded")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("26. colour properties set on an encode survive the probe")
+    do {
+        let destination = media.appendingPathComponent("e2e_hdr.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(1))],
+            outputs: [Output(url: destination,
+                             video: VideoSettings(codec: .h264, preset: .ultrafast,
+                                                  colorProperties: .rec2020PQ),
+                             audio: .disabled)])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        let stream = info.videoStreams.first
+        // Only colorSpace and colorRange are checked here: on this build, -color_primaries and
+        // -color_trc as generic output options do not reach the muxed stream's tags at all (found
+        // while writing this test - confirmed independent of the typed API, with the same flags
+        // fed to ffmpeg directly). isHighDynamicRange, which reads colorTransfer, is consequently
+        // untestable this way; it works for a source that already carries the tag (section 12).
+        check(stream?.colorSpace == "bt2020nc", "colour matrix tag written (\(stream?.colorSpace ?? "?"))")
+        check(stream?.colorRange == "tv", "colour range tag written (\(stream?.colorRange ?? "?"))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
     print("\n\(failures == 0 ? "ALL CHECKS PASSED" : "\(failures) CHECK(S) FAILED")")
     exit(failures == 0 ? 0 : 1)
 }

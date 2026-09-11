@@ -382,7 +382,17 @@ struct RequestBuilder {
 
         for argument in arguments {
             if let token = tokensByPath[argument] {
-                substituted.append(contentsOf: ["-fd", token, "fd:"])
+                // ffmpeg's "-fd N" is a protocol option: it has to precede whatever consumes it,
+                // exactly like the typed builder's own "-fd token -i fd:". A bare trailing path -
+                // an output, which has no flag of its own - keeps the token and "fd:" together
+                // where the path was; a path following "-i" needs the token hoisted ahead of it,
+                // or ffmpeg reads "-fd" itself as the filename and fails.
+                if substituted.last == "-i" {
+                    substituted.removeLast()
+                    substituted.append(contentsOf: ["-fd", token, "-i", "fd:"])
+                } else {
+                    substituted.append(contentsOf: ["-fd", token, "fd:"])
+                }
             } else {
                 substituted.append(argument)
             }
