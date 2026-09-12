@@ -15,6 +15,7 @@ try await ffmpeg.convert(Conversion(from: source, to: destination, video: .h264(
 | **[Building](Building.md)** | Prerequisites, targets, what the FFmpeg build phase does, known pitfalls. |
 | **[Architecture](Architecture.md)** | Why three processes, how file access crosses them, the pipe protocol. |
 | **[Testing](Testing.md)** | The four suites, the coverage gate, and guarding against FFmpeg output drift. |
+| **[Review](Review.md)** | A full code review: confirmed bugs, design concerns, hygiene, and what to fix first. |
 
 ## The shape of it
 
