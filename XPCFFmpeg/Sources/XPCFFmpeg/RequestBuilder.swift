@@ -129,8 +129,74 @@ struct RequestBuilder {
 
         if let pass = pass { append("-pass", String(pass)) }
 
-        append(encoderOptions: video.encoderOptions)
+        append(encoderOptions: RequestBuilder.mergingColorVUIParams(video.encoderOptions,
+                                                                    codec: video.codec,
+                                                                    color: video.colorProperties))
         arguments.append(contentsOf: video.additionalOptions)
+    }
+
+    /// Mirrors `colorProperties` into libx264/libx265's own parameter string, for the two codecs
+    /// that need it.
+    ///
+    /// `-color_primaries`/`-color_trc` as generic output options never reach the encoded bitstream
+    /// for these two encoders: reproduced with an unrelated, unmodified FFmpeg build, and confirmed
+    /// by decoding the raw stream, so it is not a muxer or ffprobe reporting quirk - the SPS/VPS
+    /// itself never carries them. `-colorspace`/`-color_range` are unaffected and already reach the
+    /// bitstream through the generic path above; this only needs to cover the two that do not.
+    /// libx264 and libx265's own parameter strings do not have the bug, so this recreates
+    /// `colorProperties` there too, in whichever spelling each encoder's parser expects.
+    ///
+    /// Whatever the caller already put in `encoderOptions` under that key wins, key by key: this
+    /// only fills in what they have not already said themselves.
+    private static func mergingColorVUIParams(_ encoderOptions: [String : String],
+                                              codec: VideoCodec?, color: ColorProperties?)
+        -> [String : String] {
+        guard let color = color, !color.isEmpty else { return encoderOptions }
+
+        let key: String
+        var derived: [String : String] = [:]
+
+        switch codec {
+        case .h264:
+            key = "x264-params"
+            // x264's params parser: "fullrange", on/off.
+            if let range = color.range { derived["fullrange"] = range == "pc" ? "on" : "off" }
+        case .hevc:
+            key = "x265-params"
+            // x265's params parser: "range", full/limited - not the same spelling as x264's.
+            if let range = color.range { derived["range"] = range == "pc" ? "full" : "limited" }
+        default:
+            return encoderOptions
+        }
+
+        // These three are spelled identically by both encoders' parameter parsers.
+        if let space = color.space { derived["colormatrix"] = space }
+        if let primaries = color.primaries { derived["colorprim"] = primaries }
+        if let transfer = color.transfer { derived["transfer"] = transfer }
+
+        guard !derived.isEmpty else { return encoderOptions }
+
+        var existing = parseParamString(encoderOptions[key])
+        for (name, value) in derived where existing[name] == nil { existing[name] = value }
+
+        var merged = encoderOptions
+        merged[key] = existing.sorted { $0.key < $1.key }
+                              .map { "\($0.key)=\($0.value)" }
+                              .joined(separator: ":")
+        return merged
+    }
+
+    /// Splits an x264-params/x265-params style string ("key=value:key=value") back into a dictionary,
+    /// so a value this package derives can be merged with one the caller already supplied.
+    private static func parseParamString(_ string: String?) -> [String : String] {
+        guard let string = string else { return [:] }
+
+        var result: [String : String] = [:]
+        for pair in string.split(separator: ":") {
+            let parts = pair.split(separator: "=", maxSplits: 1)
+            if parts.count == 2 { result[String(parts[0])] = String(parts[1]) }
+        }
+        return result
     }
 
     /// Sorted, so the same settings always produce the same command line - which is what makes

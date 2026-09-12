@@ -604,29 +604,33 @@ func main() async {
         check(false, "threw: \(error)")
     }
 
-    section("26. colour properties set on an encode survive the probe")
-    do {
-        let destination = media.appendingPathComponent("e2e_hdr.mp4")
-        try? FileManager.default.removeItem(at: destination)
-        let conversion = Conversion(
-            inputs: [Input(url: source, timeRange: .first(1))],
-            outputs: [Output(url: destination,
-                             video: VideoSettings(codec: .h264, preset: .ultrafast,
-                                                  colorProperties: .rec2020PQ),
-                             audio: .disabled)])
-        _ = try await ffmpeg.convert(conversion)
+    section("26. HDR colour properties set on an encode survive the probe")
+    // -color_primaries/-color_trc as generic output options never reach libx264/libx265's own
+    // encoded bitstream - reproduced against an unrelated, unmodified FFmpeg build too, so
+    // RequestBuilder now also mirrors colorProperties into "-x264-params"/"-x265-params", which do
+    // not have the bug. Both encoders are checked since each spells full/limited range differently.
+    for (name, codec) in [("h264", VideoCodec.h264), ("hevc", VideoCodec.hevc)] {
+        do {
+            let destination = media.appendingPathComponent("e2e_hdr_\(name).mp4")
+            try? FileManager.default.removeItem(at: destination)
+            let conversion = Conversion(
+                inputs: [Input(url: source, timeRange: .first(1))],
+                outputs: [Output(url: destination,
+                                 video: VideoSettings(codec: codec, preset: .ultrafast,
+                                                      colorProperties: .rec2020PQ),
+                                 audio: .disabled)])
+            _ = try await ffmpeg.convert(conversion)
 
-        let info = try await ffmpeg.probe(destination)
-        let stream = info.videoStreams.first
-        // Only colorSpace and colorRange are checked here: on this build, -color_primaries and
-        // -color_trc as generic output options do not reach the muxed stream's tags at all (found
-        // while writing this test - confirmed independent of the typed API, with the same flags
-        // fed to ffmpeg directly). isHighDynamicRange, which reads colorTransfer, is consequently
-        // untestable this way; it works for a source that already carries the tag (section 12).
-        check(stream?.colorSpace == "bt2020nc", "colour matrix tag written (\(stream?.colorSpace ?? "?"))")
-        check(stream?.colorRange == "tv", "colour range tag written (\(stream?.colorRange ?? "?"))")
-    } catch {
-        check(false, "threw: \(error)")
+            let info = try await ffmpeg.probe(destination)
+            let stream = info.videoStreams.first
+            check(stream?.colorSpace == "bt2020nc", "\(name): colour matrix tag written (\(stream?.colorSpace ?? "?"))")
+            check(stream?.colorPrimaries == "bt2020", "\(name): primaries tag written (\(stream?.colorPrimaries ?? "?"))")
+            check(stream?.colorTransfer == "smpte2084", "\(name): PQ transfer tag written (\(stream?.colorTransfer ?? "?"))")
+            check(stream?.colorRange == "tv", "\(name): colour range tag written (\(stream?.colorRange ?? "?"))")
+            check(stream?.isHighDynamicRange == true, "\(name): reads back as HDR")
+        } catch {
+            check(false, "\(name) threw: \(error)")
+        }
     }
 
     print("\n\(failures == 0 ? "ALL CHECKS PASSED" : "\(failures) CHECK(S) FAILED")")

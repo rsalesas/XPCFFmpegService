@@ -121,6 +121,53 @@ final class ConversionOptionsTests: XCTestCase {
         XCTAssertFalse(arguments.contains("-colorspace"))
     }
 
+    // -color_primaries/-color_trc as generic output options never reach libx264/libx265's own
+    // encoded bitstream - confirmed against an unrelated, unmodified FFmpeg build too, so this is
+    // not something this package's build alone does. colorProperties is mirrored into the
+    // encoder's own parameter string as well, which does not have the bug.
+
+    func testColourPropertiesAlsoReachX264ParamsForH264() throws {
+        let settings = VideoSettings(codec: .h264, colorProperties: .rec2020PQ)
+        let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
+
+        let value = arguments[position(of: "-x264-params", in: arguments)! + 1]
+        XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:fullrange=off:transfer=smpte2084")
+    }
+
+    func testColourPropertiesAlsoReachX265ParamsForHEVC() throws {
+        // x265's parameter parser spells full/limited range differently to x264's - "range", not
+        // "fullrange", and "full"/"limited" rather than "on"/"off".
+        let settings = VideoSettings(codec: .hevc, colorProperties: .rec2020PQ)
+        let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
+
+        let value = arguments[position(of: "-x265-params", in: arguments)! + 1]
+        XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:range=limited:transfer=smpte2084")
+    }
+
+    func testColourPropertiesDoNotGrowXParamsForOtherCodecs() throws {
+        // The bug, and so the workaround, is specific to these two encoders.
+        let settings = VideoSettings(codec: .hevcVideoToolbox, bitrate: .mbps(4),
+                                     colorProperties: .rec2020PQ)
+        let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
+
+        XCTAssertFalse(arguments.contains("-x264-params"))
+        XCTAssertFalse(arguments.contains("-x265-params"))
+    }
+
+    func testCallerSuppliedXParamsWinOverDerivedColour() throws {
+        // A caller who has already reached for encoderOptions has gone to the trouble of setting
+        // this by hand; what they wrote for a key colorProperties would also set must not be
+        // clobbered, even though the two arrive through different fields.
+        let settings = VideoSettings(codec: .h264, colorProperties: .rec2020PQ,
+                                     encoderOptions: ["x264-params": "transfer=bt709:keyint=50"])
+        let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
+
+        let value = arguments[position(of: "-x264-params", in: arguments)! + 1]
+        // transfer keeps the caller's bt709, keyint survives untouched, and the two colorProperties
+        // fields the caller did not mention are filled in.
+        XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:fullrange=off:keyint=50:transfer=bt709")
+    }
+
     // MARK: - Hardware
 
     func testHardwareEncodersAreNamedNotInferred() throws {
