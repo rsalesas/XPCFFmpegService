@@ -633,6 +633,186 @@ func main() async {
         }
     }
 
+    section("27. multiple outputs from one conversion")
+    do {
+        let full = media.appendingPathComponent("e2e_multi_full.mp4")
+        let small = media.appendingPathComponent("e2e_multi_small.mp4")
+        try? FileManager.default.removeItem(at: full)
+        try? FileManager.default.removeItem(at: small)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(2))],
+            outputs: [
+                Output(url: full, video: .h264(preset: .ultrafast), audio: .disabled),
+                Output(url: small, video: VideoSettings(codec: .h264,
+                                                        size: FrameSize(width: 320, height: 240),
+                                                        preset: .ultrafast),
+                      audio: .disabled),
+            ])
+        _ = try await ffmpeg.convert(conversion)
+
+        check(fileSize(full) > 0 && fileSize(small) > 0, "both outputs written from one command")
+        let smallInfo = try await ffmpeg.probe(small)
+        check(smallInfo.videoStreams.first?.frameSize == FrameSize(width: 320, height: 240),
+              "the second output was scaled independently of the first")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("28. trimming the output rather than seeking the input")
+    do {
+        let destination = media.appendingPathComponent("e2e_output_trim.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source)],
+            outputs: [Output(url: destination, video: .h264(preset: .ultrafast), audio: .disabled,
+                             timeRange: .first(2))])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(abs((info.duration ?? 0) - 2) < 0.7,
+              "output trimmed to ~2s without seeking the input (\(info.duration ?? 0))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("29. channel count and layout on the encoded audio")
+    do {
+        let destination = media.appendingPathComponent("e2e_channels.m4a")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(2))],
+            outputs: [Output(url: destination, container: .m4a, video: .disabled,
+                             audio: AudioSettings(codec: .aac, channels: 2, channelLayout: .stereo))])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(info.audioStreams.first?.channels == 2,
+              "mono source upmixed to stereo (\(info.audioStreams.first?.channels ?? -1) channels)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("30. the escape hatch on each field, not just the top-level one")
+    do {
+        let destination = media.appendingPathComponent("e2e_additional_options.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        // "title" is not one of the handful of per-stream tags the mov/mp4 muxer recognises (found
+        // while writing this test - "language" is, confirmed directly against ffmpeg), so that is
+        // what distinguishes the video and audio tracks here.
+        let conversion = Conversion(
+            inputs: [Input(url: source, additionalOptions: ["-t", "2"])],
+            outputs: [Output(url: destination,
+                             video: VideoSettings(codec: .h264, preset: .ultrafast,
+                                                  additionalOptions: ["-metadata:s:v:0", "language=fra"]),
+                             audio: AudioSettings(codec: .aac,
+                                                  additionalOptions: ["-metadata:s:a:0", "language=deu"]),
+                             additionalOptions: ["-metadata", "comment=output-level"])])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(abs((info.duration ?? 0) - 2) < 0.7,
+              "Input.additionalOptions' raw -t trimmed the input (\(info.duration ?? 0))")
+        check(info.videoStreams.first?.tags["language"] == "fra",
+              "VideoSettings.additionalOptions reached the video stream")
+        check(info.audioStreams.first?.tags["language"] == "deu",
+              "AudioSettings.additionalOptions reached the audio stream")
+        check(info.format?.tags["comment"] == "output-level",
+              "Output.additionalOptions reached the container")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("31. one-pass loudnorm and the broadcast presets")
+    do {
+        let onePass = media.appendingPathComponent("e2e_loudnorm_onepass.m4a")
+        try? FileManager.default.removeItem(at: onePass)
+        let onePassConversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(3))],
+            outputs: [Output(url: onePass, container: .m4a, video: .disabled,
+                             audio: AudioSettings(codec: .aac,
+                                 loudness: LoudnessNormalization(integratedTarget: -23, truePeak: -1,
+                                                                 isTwoPass: false)))])
+        _ = try await ffmpeg.convert(onePassConversion)
+        check(fileSize(onePass) > 0, "one-pass loudnorm output written (\(fileSize(onePass)) bytes)")
+
+        let ebu = media.appendingPathComponent("e2e_loudnorm_ebu.m4a")
+        try? FileManager.default.removeItem(at: ebu)
+        let ebuConversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(3))],
+            outputs: [Output(url: ebu, container: .m4a, video: .disabled,
+                             audio: AudioSettings(codec: .aac, loudness: .broadcastEBU))])
+        _ = try await ffmpeg.convert(ebuConversion)
+        check(fileSize(ebu) > 0, "broadcastEBU preset output written (\(fileSize(ebu)) bytes)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("32. joining without carrying audio")
+    do {
+        let joined = media.appendingPathComponent("e2e_joined_noaudio.mp4")
+        try? FileManager.default.removeItem(at: joined)
+        _ = try await ffmpeg.convert(.joining([source, source], to: joined, container: .mp4,
+                                              includesAudio: false))
+
+        let info = try await ffmpeg.probe(joined)
+        check(info.audioStreams.isEmpty, "joined output has no audio, as asked")
+        check(!info.videoStreams.isEmpty, "joined output still has video")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("33. two-pass video and two-pass loudnorm together")
+    do {
+        let destination = media.appendingPathComponent("e2e_combined_twopass.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(3))],
+            outputs: [Output(url: destination, container: .mp4,
+                             video: VideoSettings(codec: .h264, bitrate: .kbps(400),
+                                                  preset: .ultrafast, isTwoPass: true),
+                             audio: AudioSettings(codec: .aac, bitrate: .kbps(128),
+                                                  loudness: .streaming))])
+        _ = try await ffmpeg.convert(conversion)
+
+        let info = try await ffmpeg.probe(destination)
+        check(info.videoStreams.first?.codecName == "h264", "combined two-pass output is h264")
+        check(info.audioStreams.first?.codecName == "aac",
+              "combined two-pass output has normalised aac audio")
+        check((info.duration ?? 0) > 2, "duration looks right (\(info.duration ?? 0))")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("34. cancelling during a two-pass encode")
+    do {
+        let destination = media.appendingPathComponent("e2e_twopass_cancel.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, readAtNativeRate: true)],
+            outputs: [Output(url: destination, container: .mp4,
+                             video: VideoSettings(codec: .h264, bitrate: .kbps(400),
+                                                  preset: .ultrafast, isTwoPass: true),
+                             audio: .disabled)])
+        let task = Task { try await ffmpeg.convert(conversion) }
+
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            check(false, "should have thrown")
+        } catch FFmpegError.cancelled {
+            check(true, "cancelling mid-two-pass threw FFmpegError.cancelled")
+        } catch {
+            check(false, "wrong error: \(error)")
+        }
+
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        check(runningFFmpegTasks() == 0, "no orphaned pass left running")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
     print("\n\(failures == 0 ? "ALL CHECKS PASSED" : "\(failures) CHECK(S) FAILED")")
     exit(failures == 0 ? 0 : 1)
 }
