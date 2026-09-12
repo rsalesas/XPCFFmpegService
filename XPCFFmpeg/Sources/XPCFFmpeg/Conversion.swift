@@ -459,8 +459,12 @@ public struct Conversion {
     public var inputs: [Input]
     public var outputs: [Output]
     public var filterGraph: FilterGraph?
-    /// Overwrite an existing output (-y). On by default: without it ffmpeg blocks on a prompt that
-    /// nothing can answer, since FFmpegTask runs with stdin closed.
+    /// Overwrite an existing output. On by default.
+    ///
+    /// Enforced where the file is opened rather than by ffmpeg's `-n`, which has nothing to act
+    /// on: ffmpeg is handed a descriptor for a file this process has already opened, and never a
+    /// filename it could refuse. Setting this to false makes a conversion whose destination
+    /// already exists throw `FFmpegError.destinationExists`, before anything is opened.
     public var overwriteExisting: Bool
     public var additionalGlobalOptions: [String]
 

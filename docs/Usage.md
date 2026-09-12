@@ -382,20 +382,28 @@ let hardware = encoders.contains { $0.name == "hevc_videotoolbox" }
 let settings = VideoSettings(codec: hardware ? .other("hevc_videotoolbox") : .hevc)
 ```
 
-`protocols()` reports what FFmpeg was compiled with, which is more than this API can currently
-reach: a `Conversion` opens every file in the client and passes a descriptor, so `http` appearing
-in that list does not make a URL usable as an `Input`.
+`protocols()` reports what FFmpeg was compiled with. A local file is opened in the client and
+travels as a descriptor, so most of that list is reached through `Input.remote`, where ffmpeg
+opens the URL for itself — inside the sandboxed helper. See [Remote inputs](#remote-inputs).
 
 ## The escape hatch
 
 For anything the typed model does not cover, pass raw arguments. Every file the request touches
-must be listed in `files` — that is how the service is given access to it:
+must be named as well — that is how the service is given access to it — and on the side it is
+used from, since that decides how it is opened:
 
 ```swift
 let job = try ffmpeg.run(request: "-ffprobe",
                          arguments: ["-show_packets", "-i", url.path],
-                         files: [url])
+                         reading: [url])
+
+let job = try ffmpeg.run(request: "-ffmpeg",
+                         arguments: ["-i", source.path, "-c", "copy", "-f", "mp4", out.path],
+                         reading: [source], writing: [out])
 ```
+
+A destination listed under `reading` is opened read-only and the job fails on ffmpeg's first
+write to it.
 
 Raw options are also available at each level without leaving the typed API:
 `Input.additionalOptions`, `VideoSettings.additionalOptions`, `AudioSettings.additionalOptions`,

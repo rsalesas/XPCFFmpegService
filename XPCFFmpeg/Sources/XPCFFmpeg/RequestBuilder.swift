@@ -26,6 +26,8 @@ struct RequestBuilder {
     private var tokens: [String] = []
     private var handles: [FileHandle] = []
     private var placeholders: [URL] = []
+    /// The destinations, kept apart from the rest so they can be emptied together and last.
+    private var writeHandles: [FileHandle] = []
 
     /// Opens `url` and returns the token standing for its descriptor.
     ///
@@ -40,17 +42,25 @@ struct RequestBuilder {
         return register(handle)
     }
 
+    /// Opens `url` for writing and returns the token standing for its descriptor.
+    ///
+    /// Deliberately without O_TRUNC. Emptying the file is the one irreversible thing this builder
+    /// does, so it waits until the whole request is known to be buildable - see
+    /// `truncateOutputs()`. Opening as we go and truncating as we went is how a conversion that
+    /// was refused a moment later used to leave an earlier destination destroyed behind it.
     private mutating func token(forWriting url: URL) throws -> String {
         let existed = FileManager.default.fileExists(atPath: url.path)
 
-        let descriptor = open(url.path, O_WRONLY | O_CREAT | O_TRUNC, 0o644)
+        let descriptor = open(url.path, O_WRONLY | O_CREAT, 0o644)
         guard descriptor >= 0 else {
             throw FFmpegError.inaccessibleFile(url, underlying: CocoaError(.fileWriteNoPermission))
         }
 
         if !existed { placeholders.append(url) }
 
-        return register(FileHandle(fileDescriptor: descriptor, closeOnDealloc: true))
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+        writeHandles.append(handle)
+        return register(handle)
     }
 
     /// A descriptor on /dev/null, for a pass whose output is not wanted.
@@ -65,6 +75,24 @@ struct RequestBuilder {
         }
 
         return register(FileHandle(fileDescriptor: descriptor, closeOnDealloc: true))
+    }
+
+    /// Empties every destination, once the request around them is known to be buildable.
+    ///
+    /// ffmpeg reaches an output through a descriptor, so it cannot truncate the file itself: what
+    /// lies beyond what it writes stays there, and a short encode over a longer file would leave
+    /// the tail of the old one attached to the new. So the truncation is ours to do - just not
+    /// until nothing can still go wrong.
+    private func truncateOutputs() {
+        for handle in writeHandles { _ = ftruncate(handle.fileDescriptor, 0) }
+    }
+
+    /// Removes the destinations this builder created, for a request that then failed to build.
+    ///
+    /// Only ever files that did not exist beforehand: one the caller already had is emptied or
+    /// left alone, never deleted.
+    private func discardPlaceholders() {
+        for url in placeholders { try? FileManager.default.removeItem(at: url) }
     }
 
     private mutating func register(_ handle: FileHandle) -> String {
@@ -101,7 +129,7 @@ struct RequestBuilder {
         if let bitrate = video.bitrate {
             append("-b:\(streamIndex)", bitrate.argument)
         } else if let quality = video.quality {
-            append("-crf", String(quality))
+            append("-crf:\(streamIndex)", String(quality))
         }
 
         // A ceiling without a window is ignored by x264, so neither is emitted alone: sending one
@@ -111,27 +139,34 @@ struct RequestBuilder {
             append("-bufsize:\(streamIndex)", bufferSize.argument)
         }
 
-        if let keyframeInterval = video.keyframeInterval { append("-g", String(keyframeInterval)) }
+        // Every one of these carries the specifier too, including where it is only "v". An option
+        // spelled bare applies to every stream of its kind, so an override that emitted one would
+        // reach back over the streams it was meant to leave alone - and, coming last, win there.
+        if let keyframeInterval = video.keyframeInterval { append("-g:\(streamIndex)", String(keyframeInterval)) }
         if let profile = video.profile { append("-profile:\(streamIndex)", profile) }
         if let level = video.level { append("-level:\(streamIndex)", level) }
-        if let tune = video.tune { append("-tune", tune) }
-        if let size = video.size { append("-s", size.argument) }
-        if let frameRate = video.frameRate { append("-r", String(frameRate)) }
-        if let preset = video.preset { append("-preset", preset.rawValue) }
-        if let pixelFormat = video.pixelFormat { append("-pix_fmt", pixelFormat) }
+        if let tune = video.tune { append("-tune:\(streamIndex)", tune) }
+        if let size = video.size { append("-s:\(streamIndex)", size.argument) }
+        if let frameRate = video.frameRate { append("-r:\(streamIndex)", String(frameRate)) }
+        if let preset = video.preset { append("-preset:\(streamIndex)", preset.rawValue) }
+        if let pixelFormat = video.pixelFormat { append("-pix_fmt:\(streamIndex)", pixelFormat) }
 
         if let color = video.colorProperties, !color.isEmpty {
-            if let space = color.space { append("-colorspace", space) }
-            if let primaries = color.primaries { append("-color_primaries", primaries) }
-            if let transfer = color.transfer { append("-color_trc", transfer) }
-            if let range = color.range { append("-color_range", range) }
+            if let space = color.space { append("-colorspace:\(streamIndex)", space) }
+            if let primaries = color.primaries { append("-color_primaries:\(streamIndex)", primaries) }
+            if let transfer = color.transfer { append("-color_trc:\(streamIndex)", transfer) }
+            if let range = color.range { append("-color_range:\(streamIndex)", range) }
         }
 
-        if let pass = pass { append("-pass", String(pass)) }
+        // Only the settings that actually asked for two passes are told which pass this is. A
+        // blanket "-pass" would put the whole output through a two-pass encode on the strength of
+        // one stream having asked for it.
+        if let pass = pass, video.isTwoPass { append("-pass:\(streamIndex)", String(pass)) }
 
         append(encoderOptions: RequestBuilder.mergingColorVUIParams(video.encoderOptions,
                                                                     codec: video.codec,
-                                                                    color: video.colorProperties))
+                                                                    color: video.colorProperties),
+               streamIndex: streamIndex)
         arguments.append(contentsOf: video.additionalOptions)
     }
 
@@ -201,9 +236,9 @@ struct RequestBuilder {
 
     /// Sorted, so the same settings always produce the same command line - which is what makes
     /// these testable at all.
-    private mutating func append(encoderOptions: [String : String]) {
+    private mutating func append(encoderOptions: [String : String], streamIndex: String) {
         for (key, value) in encoderOptions.sorted(by: { $0.key < $1.key }) {
-            append("-\(key)", value)
+            append("-\(key):\(streamIndex)", value)
         }
     }
 
@@ -220,13 +255,13 @@ struct RequestBuilder {
         }
 
         if let bitrate = audio.bitrate { append("-b:\(streamIndex)", bitrate.argument) }
-        if let sampleRate = audio.sampleRate { append("-ar", String(sampleRate)) }
-        if let channels = audio.channels { append("-ac", String(channels)) }
-        if let layout = audio.channelLayout { append("-channel_layout", layout.argument) }
+        if let sampleRate = audio.sampleRate { append("-ar:\(streamIndex)", String(sampleRate)) }
+        if let channels = audio.channels { append("-ac:\(streamIndex)", String(channels)) }
+        if let layout = audio.channelLayout { append("-channel_layout:\(streamIndex)", layout.argument) }
 
         // Loudness is deliberately absent here: it is a filter, and filters live in the graph.
 
-        append(encoderOptions: audio.encoderOptions)
+        append(encoderOptions: audio.encoderOptions, streamIndex: streamIndex)
         arguments.append(contentsOf: audio.additionalOptions)
     }
 
@@ -243,16 +278,16 @@ struct RequestBuilder {
             append("-metadata:s:\(streamIndex)", "language=\(language)")
         }
 
-        append(encoderOptions: subtitles.encoderOptions)
+        append(encoderOptions: subtitles.encoderOptions, streamIndex: streamIndex)
         arguments.append(contentsOf: subtitles.additionalOptions)
     }
 
     /// The per-stream settings, emitted after the blanket ones so the more specific wins.
-    private mutating func append(overrides: [StreamOverride]) {
+    private mutating func append(overrides: [StreamOverride], pass: Int? = nil) {
         for override in overrides {
             switch override.settings {
             case .video(let settings):
-                append(video: settings, streamIndex: override.selector.specifier)
+                append(video: settings, streamIndex: override.selector.specifier, pass: pass)
             case .audio(let settings):
                 append(audio: settings, streamIndex: override.selector.specifier)
             case .subtitles(let settings):
@@ -272,7 +307,10 @@ struct RequestBuilder {
         switch output.url.pathExtension.lowercased() {
         case "mp4", "m4v":  return "mp4"
         case "mov":         return "mov"
-        case "mkv", "webm": return "matroska"
+        case "mkv":         return "matroska"
+        // Not matroska: the webm muxer writes a WebM DocType and holds the file to WebM's codec
+        // subset. Matroska under a .webm name is what a browser refuses to play.
+        case "webm":        return "webm"
         case "m4a":         return "ipod"
         case "wav":         return "wav"
         case "mp3":         return "mp3"
@@ -302,7 +340,27 @@ struct RequestBuilder {
     }
 
     static func request(for conversion: Conversion, pass: Pass = .single) throws -> Built {
+        // Refused before anything is opened, because opening a destination is what empties it. A
+        // request that cannot be built has to leave every file it was going to write as it found
+        // it, and a muxer that cannot be named is the likeliest reason it cannot be built.
+        let containers = try conversion.outputs.map { try container(for: $0) }
+
+        if !conversion.overwriteExisting {
+            // Here, or nowhere. ffmpeg's own -n refuses an output it can see by name, and there is
+            // no name here - it is handed a descriptor this process already opened, and by then
+            // the file it refers to would already have been emptied.
+            for output in conversion.outputs
+            where FileManager.default.fileExists(atPath: output.url.path) {
+                throw FFmpegError.destinationExists(output.url)
+            }
+        }
+
         var builder = RequestBuilder()
+
+        // Whatever a failed build created, it created only in order to write to it, and by
+        // definition nothing has been written. Leaving it behind is litter nobody asked for.
+        var succeeded = false
+        defer { if !succeeded { builder.discardPlaceholders() } }
 
         if conversion.overwriteExisting { builder.append("-y") }
 
@@ -348,7 +406,7 @@ struct RequestBuilder {
             builder.append(video: output.video, streamIndex: "v", pass: pass.number)
             builder.append(audio: output.audio, streamIndex: "a")
             builder.append(subtitles: output.subtitles, streamIndex: "s")
-            builder.append(overrides: output.streamOverrides)
+            builder.append(overrides: output.streamOverrides, pass: pass.number)
             builder.append(timeRange: output.timeRange)
 
             if let logToken = pass.logToken { builder.append("-passlogfile", logToken) }
@@ -358,7 +416,7 @@ struct RequestBuilder {
                 builder.append("-metadata", "\(key)=\(value)")
             }
 
-            let container = try RequestBuilder.container(for: output)
+            let container = containers[index]
 
             // A measuring pass exists for its side effects - the pass log and what loudnorm
             // printed - so it muxes nothing and writes to a descriptor on /dev/null.
@@ -386,6 +444,11 @@ struct RequestBuilder {
             builder.append("-fd", token, "fd:")
         }
 
+        succeeded = true
+
+        // The whole vector is built and every file is open: only now is anything destroyed.
+        builder.truncateOutputs()
+
         return Built(request: FFmpegRequest(request: "-ffmpeg", arguments: builder.arguments),
                      tokens: builder.tokens, handles: builder.handles,
                      placeholders: builder.placeholders)
@@ -405,7 +468,23 @@ struct RequestBuilder {
     /// wrong quietly. So the two are refused together, with an error that says how to combine them
     /// by hand.
     static func filterGraph(for conversion: Conversion, pass: Pass) throws -> Graph {
-        guard let output = conversion.outputs.first,
+        // A graph names the streams it does not touch as well as the ones it does, so normalising
+        // one stream out of several means knowing how many there are - which is a probe this
+        // builder does not have. Rather than accept the setting and drop it, say so.
+        for override in conversion.outputs.flatMap({ $0.streamOverrides }) {
+            guard case .audio(let settings) = override.settings,
+                  let loudness = settings.loudness else { continue }
+
+            throw FFmpegError.unsupportedSetting(
+                "Loudness normalisation cannot be set on a StreamOverride, because the filter "
+              + "graph it needs would have to name every other stream of the output. Set it on "
+              + "Output.audio, which covers every audio stream, or put "
+              + "\"\(loudness.filterArgument())\" into a filterGraph of your own.")
+        }
+
+        // Any output can carry it, but only one of them, and the graph is written for the first -
+        // so anything else is refused below rather than quietly left out of the command line.
+        guard let output = conversion.outputs.first(where: { $0.audio?.loudness != nil }),
               let loudness = output.audio?.loudness else {
             return Graph(description: conversion.filterGraph?.description)
         }
@@ -437,13 +516,25 @@ struct RequestBuilder {
 
     /// The escape hatch: the caller's own arguments, with each named file opened and its path
     /// replaced by ffmpeg's descriptor form.
-    static func raw(verb: String, arguments: [String], files: [URL]) throws -> Built {
+    ///
+    /// Which side of the command line a file is on has to be stated, because it decides how the
+    /// file is opened, and a destination opened for reading is a job that fails on its first
+    /// write. A file named in both is opened for reading, on the grounds that ffmpeg reading and
+    /// writing one file at once is not something to make easy.
+    static func raw(verb: String, arguments: [String],
+                    reading: [URL] = [], writing: [URL] = []) throws -> Built {
         var builder = RequestBuilder()
         var substituted: [String] = []
 
+        var succeeded = false
+        defer { if !succeeded { builder.discardPlaceholders() } }
+
         var tokensByPath: [String : String] = [:]
-        for url in files {
+        for url in reading {
             tokensByPath[url.path] = try builder.token(forReading: url)
+        }
+        for url in writing where tokensByPath[url.path] == nil {
+            tokensByPath[url.path] = try builder.token(forWriting: url)
         }
 
         for argument in arguments {
@@ -465,9 +556,12 @@ struct RequestBuilder {
         }
 
         builder.arguments = substituted
+        succeeded = true
+        builder.truncateOutputs()
 
         return Built(request: FFmpegRequest(request: verb, arguments: builder.arguments),
-                     tokens: builder.tokens, handles: builder.handles, placeholders: [])
+                     tokens: builder.tokens, handles: builder.handles,
+                     placeholders: builder.placeholders)
     }
 
     static func probeRequest(for url: URL, options: ProbeOptions) throws -> Built {

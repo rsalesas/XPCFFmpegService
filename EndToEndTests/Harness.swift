@@ -568,7 +568,7 @@ func main() async {
         let job = try ffmpeg.run(request: "-ffmpeg",
                                  arguments: ["-stream_loop", "2", "-i", standaloneImage.path,
                                              "-t", "1", "-f", "null", "-"],
-                                 files: [standaloneImage])
+                                 reading: [standaloneImage])
         _ = try await job.value()
         check(true, "raw ffmpeg invocation completed, looping a real input by its descriptor")
     } catch {
@@ -809,6 +809,93 @@ func main() async {
 
         try await Task.sleep(nanoseconds: 3_000_000_000)
         check(runningFFmpegTasks() == 0, "no orphaned pass left running")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("35. a .webm destination is written by the webm muxer, not by matroska")
+    do {
+        let destination = media.appendingPathComponent("e2e_webm.webm")
+        try? FileManager.default.removeItem(at: destination)
+        // No container: on the Output, so the muxer comes from the extension - which used to give
+        // matroska, and a Matroska DocType under a .webm name is a file a browser will not play.
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(1))],
+            outputs: [Output(url: destination,
+                             video: VideoSettings(codec: .other("libvpx-vp9"), bitrate: .kbps(300),
+                                                  encoderOptions: ["deadline": "realtime",
+                                                                   "cpu-used": "8"]),
+                             audio: .disabled)])
+        _ = try await ffmpeg.convert(conversion)
+
+        // ffprobe reports "matroska,webm" for either, so the EBML DocType is the only thing that
+        // tells them apart.
+        let header = try Data(contentsOf: destination).prefix(64)
+        check(header.range(of: Data("webm".utf8)) != nil, "EBML DocType says webm")
+        check(header.range(of: Data("matroska".utf8)) == nil, "and does not say matroska")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("36. the escape hatch writes a file, not only reads one")
+    do {
+        let destination = media.appendingPathComponent("e2e_raw_output.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        // Every file named here used to be opened read-only, so this failed on the first write.
+        let job = try ffmpeg.run(request: "-ffmpeg",
+                                 arguments: ["-i", source.path, "-t", "1", "-c", "copy",
+                                             "-f", "mp4", destination.path],
+                                 reading: [source], writing: [destination])
+        _ = try await job.value()
+        check(fileSize(destination) > 0,
+              "raw invocation wrote its own output (\(fileSize(destination)) bytes)")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("37. two passes asked for by a stream override rather than by the blanket settings")
+    do {
+        let destination = media.appendingPathComponent("e2e_override_twopass.mp4")
+        try? FileManager.default.removeItem(at: destination)
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(3))],
+            outputs: [Output(url: destination, container: .mp4, audio: .disabled,
+                             streamOverrides: [StreamOverride(.video(0),
+                                 .video(VideoSettings(codec: .h264, bitrate: .kbps(400),
+                                                      preset: .ultrafast, isTwoPass: true)))])])
+        _ = try await ffmpeg.convert(conversion)
+
+        // Ran twice either way; what is new is that both runs are told which pass they are, so the
+        // statistics of the first are what the second spends its bitrate on.
+        check(fileSize(destination) > 0, "output written (\(fileSize(destination)) bytes)")
+        let info = try await ffmpeg.probe(destination)
+        check(info.videoStreams.first?.codecName == "h264", "and it decodes as h264")
+    } catch {
+        check(false, "threw: \(error)")
+    }
+
+    section("38. a destination the conversion was told not to overwrite is left alone")
+    do {
+        let destination = media.appendingPathComponent("e2e_precious.mp4")
+        try Data("precious bytes".utf8).write(to: destination)
+
+        let conversion = Conversion(
+            inputs: [Input(url: source, timeRange: .first(1))],
+            outputs: [Output(url: destination, container: .mp4,
+                             video: .h264(preset: .ultrafast), audio: .disabled)],
+            overwriteExisting: false)
+
+        do {
+            _ = try await ffmpeg.convert(conversion)
+            check(false, "should have refused to overwrite")
+        } catch FFmpegError.destinationExists {
+            check(true, "refused with destinationExists")
+        }
+
+        // ffmpeg never sees a filename here, only a descriptor, so this is enforced in the client
+        // or not at all - and the file used to be emptied while the flag was still being honoured.
+        check((try? Data(contentsOf: destination)) == Data("precious bytes".utf8),
+              "and the file is byte for byte what it was")
     } catch {
         check(false, "threw: \(error)")
     }

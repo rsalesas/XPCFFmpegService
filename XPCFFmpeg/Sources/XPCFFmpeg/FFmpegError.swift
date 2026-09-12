@@ -17,6 +17,12 @@ public enum FFmpegError: Error {
     /// An output reached through a descriptor has no filename, so the container cannot be guessed
     /// from an extension. Set `Output.container`.
     case indeterminateContainer(URL)
+    /// The destination is already there, and `Conversion.overwriteExisting` said to leave it be.
+    /// Nothing has been opened, so the file is exactly as it was.
+    case destinationExists(URL)
+    /// A setting the typed model can hold but the request builder cannot express. Stated rather
+    /// than dropped: the detail says what was refused and what to do instead.
+    case unsupportedSetting(String)
     /// The reply did not look like what the request should have produced.
     case unexpectedResponse(String)
     /// Two requests that both need to own the filter graph. Loudness normalisation is built out of
@@ -57,6 +63,13 @@ extension FFmpegError: LocalizedError {
 
         case .indeterminateContainer(let url):
             return "The output format for \(url.lastPathComponent) could not be determined; set Output.container."
+
+        case .destinationExists(let url):
+            return "\(url.lastPathComponent) already exists, and this conversion was told not to "
+                 + "overwrite it."
+
+        case .unsupportedSetting(let detail):
+            return detail
 
         case .unexpectedResponse(let detail):
             return "The service returned an unexpected response (\(detail))."

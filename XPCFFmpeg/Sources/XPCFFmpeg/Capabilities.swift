@@ -109,9 +109,9 @@ public struct ChannelLayouts: Equatable {
 
 /// Which URL schemes this build understands, by direction.
 ///
-/// Note that a protocol appearing here is not on its own enough to use it: `Conversion` reaches
-/// every file through a descriptor opened in the client, so a network input needs an API that can
-/// say "this one is a URL" before any of these become reachable.
+/// A protocol listed here is reached through `Input.remote`, which hands ffmpeg the URL to open
+/// for itself. `InputSource.file` cannot use one: it is opened in the client and travels as a
+/// descriptor, which is what makes it work under the App Sandbox.
 public struct Protocols: Equatable {
     public let input: [String]
     public let output: [String]

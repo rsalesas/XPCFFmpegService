@@ -83,10 +83,10 @@ final class ConversionOptionsTests: XCTestCase {
                                      profile: "high", level: "4.1", tune: "film")
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        XCTAssertEqual(arguments[position(of: "-g", in: arguments)! + 1], "48")
+        XCTAssertEqual(arguments[position(of: "-g:v", in: arguments)! + 1], "48")
         XCTAssertEqual(arguments[position(of: "-profile:v", in: arguments)! + 1], "high")
         XCTAssertEqual(arguments[position(of: "-level:v", in: arguments)! + 1], "4.1")
-        XCTAssertEqual(arguments[position(of: "-tune", in: arguments)! + 1], "film")
+        XCTAssertEqual(arguments[position(of: "-tune:v", in: arguments)! + 1], "film")
     }
 
     func testEncoderOptionsAreEmittedInAStableOrder() throws {
@@ -98,7 +98,7 @@ final class ConversionOptionsTests: XCTestCase {
 
         // Sorted by name: a dictionary has no order of its own, and a command line that changes
         // between runs cannot be asserted on.
-        let emitted = ["-aq-mode", "3", "-refs", "4", "-x264-params", "keyint=50"]
+        let emitted = ["-aq-mode:v", "3", "-refs:v", "4", "-x264-params:v", "keyint=50"]
         XCTAssertNotNil(arguments.firstRange(of: emitted))
     }
 
@@ -108,17 +108,17 @@ final class ConversionOptionsTests: XCTestCase {
         let settings = VideoSettings(codec: .hevc, colorProperties: .rec2020PQ)
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        XCTAssertEqual(arguments[position(of: "-colorspace", in: arguments)! + 1], "bt2020nc")
-        XCTAssertEqual(arguments[position(of: "-color_primaries", in: arguments)! + 1], "bt2020")
-        XCTAssertEqual(arguments[position(of: "-color_trc", in: arguments)! + 1], "smpte2084")
-        XCTAssertEqual(arguments[position(of: "-color_range", in: arguments)! + 1], "tv")
+        XCTAssertEqual(arguments[position(of: "-colorspace:v", in: arguments)! + 1], "bt2020nc")
+        XCTAssertEqual(arguments[position(of: "-color_primaries:v", in: arguments)! + 1], "bt2020")
+        XCTAssertEqual(arguments[position(of: "-color_trc:v", in: arguments)! + 1], "smpte2084")
+        XCTAssertEqual(arguments[position(of: "-color_range:v", in: arguments)! + 1], "tv")
     }
 
     func testAnEmptyColourSetEmitsNothing() throws {
         let settings = VideoSettings(codec: .h264, colorProperties: ColorProperties())
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        XCTAssertFalse(arguments.contains("-colorspace"))
+        XCTAssertFalse(arguments.contains("-colorspace:v"))
     }
 
     // -color_primaries/-color_trc as generic output options never reach libx264/libx265's own
@@ -130,7 +130,7 @@ final class ConversionOptionsTests: XCTestCase {
         let settings = VideoSettings(codec: .h264, colorProperties: .rec2020PQ)
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        let value = arguments[position(of: "-x264-params", in: arguments)! + 1]
+        let value = arguments[position(of: "-x264-params:v", in: arguments)! + 1]
         XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:fullrange=off:transfer=smpte2084")
     }
 
@@ -140,7 +140,7 @@ final class ConversionOptionsTests: XCTestCase {
         let settings = VideoSettings(codec: .hevc, colorProperties: .rec2020PQ)
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        let value = arguments[position(of: "-x265-params", in: arguments)! + 1]
+        let value = arguments[position(of: "-x265-params:v", in: arguments)! + 1]
         XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:range=limited:transfer=smpte2084")
     }
 
@@ -150,8 +150,8 @@ final class ConversionOptionsTests: XCTestCase {
                                      colorProperties: .rec2020PQ)
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        XCTAssertFalse(arguments.contains("-x264-params"))
-        XCTAssertFalse(arguments.contains("-x265-params"))
+        XCTAssertFalse(arguments.contains("-x264-params:v"))
+        XCTAssertFalse(arguments.contains("-x265-params:v"))
     }
 
     func testCallerSuppliedXParamsWinOverDerivedColour() throws {
@@ -162,7 +162,7 @@ final class ConversionOptionsTests: XCTestCase {
                                      encoderOptions: ["x264-params": "transfer=bt709:keyint=50"])
         let arguments = try self.arguments(Conversion(from: source, to: destination, video: settings))
 
-        let value = arguments[position(of: "-x264-params", in: arguments)! + 1]
+        let value = arguments[position(of: "-x264-params:v", in: arguments)! + 1]
         // transfer keeps the caller's bt709, keyint survives untouched, and the two colorProperties
         // fields the caller did not mention are filled in.
         XCTAssertEqual(value, "colormatrix=bt2020nc:colorprim=bt2020:fullrange=off:keyint=50:transfer=bt709")
@@ -177,7 +177,7 @@ final class ConversionOptionsTests: XCTestCase {
         XCTAssertEqual(arguments[position(of: "-c:v", in: arguments)! + 1], "hevc_videotoolbox")
         // A hardware encoder takes a rate, never a CRF.
         XCTAssertEqual(arguments[position(of: "-b:v", in: arguments)! + 1], "8000000")
-        XCTAssertFalse(arguments.contains("-crf"))
+        XCTAssertFalse(arguments.contains("-crf:v"))
     }
 
     func testCodecsKnowWhetherTheyAreHardware() {
@@ -261,8 +261,8 @@ final class ConversionOptionsTests: XCTestCase {
         let audio = AudioSettings(codec: .aac, channels: 6, channelLayout: .surround51)
         let arguments = try self.arguments(Conversion(from: source, to: destination, audio: audio))
 
-        XCTAssertEqual(arguments[position(of: "-ac", in: arguments)! + 1], "6")
-        XCTAssertEqual(arguments[position(of: "-channel_layout", in: arguments)! + 1], "5.1")
+        XCTAssertEqual(arguments[position(of: "-ac:a", in: arguments)! + 1], "6")
+        XCTAssertEqual(arguments[position(of: "-channel_layout:a", in: arguments)! + 1], "5.1")
     }
 
     // MARK: - Inputs
@@ -362,7 +362,7 @@ final class ConversionOptionsTests: XCTestCase {
         let pass = RequestBuilder.Pass(number: 1, logToken: token, discardsOutput: true)
         let arguments = try self.arguments(conversion, pass: pass)
 
-        XCTAssertEqual(arguments[position(of: "-pass", in: arguments)! + 1], "1")
+        XCTAssertEqual(arguments[position(of: "-pass:v", in: arguments)! + 1], "1")
         XCTAssertEqual(arguments[position(of: "-passlogfile", in: arguments)! + 1], "<scratch>")
         // -f null, not the real muxer: the output of a measuring pass is the log, not a file.
         XCTAssertEqual(arguments[position(of: "-f", in: arguments)! + 1], "null")
@@ -375,7 +375,7 @@ final class ConversionOptionsTests: XCTestCase {
         let pass = RequestBuilder.Pass(number: 2, logToken: FFmpegRequest.scratchToken())
         let arguments = try self.arguments(conversion, pass: pass)
 
-        XCTAssertEqual(arguments[position(of: "-pass", in: arguments)! + 1], "2")
+        XCTAssertEqual(arguments[position(of: "-pass:v", in: arguments)! + 1], "2")
         XCTAssertEqual(arguments[position(of: "-f", in: arguments)! + 1], "mp4")
         XCTAssertFalse(arguments.contains("null"))
     }
@@ -505,5 +505,107 @@ final class ConversionOptionsTests: XCTestCase {
     func testALogWithNoMeasurementYieldsNothing() {
         XCTAssertNil(LoudnessMeasurement(parsing: [LogMessage(Fixture.status(domain: "error", message: "no such file"))]))
         XCTAssertNil(LoudnessMeasurement(parsing: []))
+    }
+
+    // MARK: - Per-stream settings reach one stream, and only one
+
+    func testEveryPerStreamOptionCarriesItsSpecifier() throws {
+        let video = VideoSettings(codec: .h264, quality: 22, keyframeInterval: 48, tune: "film",
+                                  size: .hd720, frameRate: 30, preset: .fast, pixelFormat: "yuv420p")
+        let audio = AudioSettings(codec: .aac, sampleRate: 48_000, channels: 2,
+                                  channelLayout: .stereo)
+        let arguments = try self.arguments(Conversion(from: source, to: destination,
+                                                      video: video, audio: audio))
+
+        // An option spelled bare applies to every stream of its kind. That is harmless for the
+        // blanket settings and is exactly what stops an override from being an override, so the
+        // specifier goes on everything rather than on the ones that happened to need it.
+        for bare in ["-crf", "-g", "-tune", "-s", "-r", "-preset", "-pix_fmt",
+                     "-ar", "-ac", "-channel_layout"] {
+            XCTAssertFalse(arguments.contains(bare), "\(bare) was emitted without a specifier")
+        }
+
+        for scoped in ["-crf:v", "-g:v", "-tune:v", "-s:v", "-r:v", "-preset:v", "-pix_fmt:v",
+                       "-ar:a", "-ac:a", "-channel_layout:a"] {
+            XCTAssertTrue(arguments.contains(scoped), "\(scoped) is missing")
+        }
+    }
+
+    func testAnOverrideDoesNotReachTheStreamsItIsNotFor() throws {
+        // Both of the override's options used to be emitted bare, which applied them to every
+        // video stream - and, coming last, beat the blanket settings on all of them. The override
+        // was not an override; it was a replacement.
+        let output = Output(url: destination, container: .mp4,
+                            video: .h264(quality: 20, preset: .fast),
+                            streamOverrides: [StreamOverride(.video(1),
+                                .video(.h264(quality: 35, preset: .ultrafast)))])
+        let arguments = try self.arguments(Conversion(inputs: [Input(url: source)], outputs: [output]))
+
+        XCTAssertEqual(arguments[position(of: "-crf:v", in: arguments)! + 1], "20")
+        XCTAssertEqual(arguments[position(of: "-preset:v", in: arguments)! + 1], "fast")
+        XCTAssertEqual(arguments[position(of: "-crf:v:1", in: arguments)! + 1], "35")
+        XCTAssertEqual(arguments[position(of: "-preset:v:1", in: arguments)! + 1], "ultrafast")
+    }
+
+    func testAnOverrideThatAskedForTwoPassesIsToldWhichPassItIs() throws {
+        // The conversion is run twice for this, so the invocations had better say which pass they
+        // are: it used to run twice as two ordinary single-pass encodes, the first to /dev/null.
+        let output = Output(url: destination, container: .mp4,
+                            streamOverrides: [StreamOverride(.video(0),
+                                .video(VideoSettings(codec: .h264, bitrate: .mbps(4), isTwoPass: true)))])
+        let conversion = Conversion(inputs: [Input(url: source)], outputs: [output])
+        XCTAssertTrue(conversion.requiresTwoPasses)
+
+        let arguments = try self.arguments(
+            conversion, pass: RequestBuilder.Pass(number: 2, logToken: FFmpegRequest.scratchToken()))
+
+        XCTAssertEqual(arguments[position(of: "-pass:v:0", in: arguments)! + 1], "2")
+    }
+
+    func testOnlyTheSettingsThatAskedForTwoPassesGetThePassFlag() throws {
+        // One stream asking does not put the rest of the output through it.
+        let output = Output(url: destination, container: .mp4,
+                            video: .h264(quality: 22),
+                            streamOverrides: [StreamOverride(.video(1),
+                                .video(VideoSettings(codec: .h264, bitrate: .mbps(4), isTwoPass: true)))])
+        let arguments = try self.arguments(Conversion(inputs: [Input(url: source)], outputs: [output]),
+                                           pass: RequestBuilder.Pass(number: 1, logToken: nil))
+
+        XCTAssertFalse(arguments.contains("-pass:v"),
+                       "the blanket settings never asked to be encoded twice")
+        XCTAssertEqual(arguments[position(of: "-pass:v:1", in: arguments)! + 1], "1")
+    }
+
+    func testLoudnessOnAnOverrideIsRefusedRatherThanIgnored() throws {
+        // It used to be read by requiresTwoPasses and by nothing else: the conversion paid for a
+        // measuring pass and then wrote no filter at all.
+        let output = Output(url: destination, container: .mp4, video: .disabled,
+                            streamOverrides: [StreamOverride(.audio(0),
+                                .audio(AudioSettings(codec: .aac, loudness: .streaming)))])
+
+        XCTAssertThrowsError(try RequestBuilder.request(
+            for: Conversion(inputs: [Input(url: source)], outputs: [output]))) { error in
+            guard case FFmpegError.unsupportedSetting(let detail) = error else {
+                return XCTFail("expected unsupportedSetting, got \(error)")
+            }
+            // The message has to carry the filter, or the caller cannot act on it.
+            XCTAssertTrue(detail.contains("loudnorm="))
+        }
+    }
+
+    func testLoudnessOnAnyOutputButTheFirstIsRefused() throws {
+        // The graph is written for one output. Loudness on a second was silently left out of the
+        // command line while still costing the conversion a measuring pass.
+        let second = destination.deletingLastPathComponent().appendingPathComponent("second.m4a")
+        let plain = Output(url: destination, container: .mp4)
+        let normalised = Output(url: second, container: .m4a, video: .disabled,
+                                audio: AudioSettings(codec: .aac, loudness: .streaming))
+
+        XCTAssertThrowsError(try RequestBuilder.request(
+            for: Conversion(inputs: [Input(url: source)], outputs: [plain, normalised]))) { error in
+            guard case FFmpegError.conflictingFilterGraph = error else {
+                return XCTFail("expected conflictingFilterGraph, got \(error)")
+            }
+        }
     }
 }

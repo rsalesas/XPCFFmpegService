@@ -4,10 +4,10 @@ Four suites, plus two scripts.
 
 | Suite | Count | Needs FFmpeg? | Time |
 |---|---|---|---|
-| `XPCFFmpeg` (SwiftPM) | 88 | no | ~10s |
-| `XPCFFmpegServiceTests` | 44 | no — stub executables | ~55s |
-| `FFmpegTaskTests` | 32 | no — captured fixtures | ~0.06s |
-| End-to-end harness | 23 checks | yes | ~1m |
+| `XPCFFmpeg` (SwiftPM) | 157 | no | ~11s |
+| `XPCFFmpegServiceTests` | 53 | no — stub executables | ~70s |
+| `FFmpegTaskTests` | 33 | no — captured fixtures | ~0.08s |
+| End-to-end harness | 122 checks | yes | ~2m |
 
 ```bash
 cd XPCFFmpeg && swift test
@@ -83,7 +83,7 @@ together:
 ```bash
 Scripts/end-to-end.sh               # the API against a real service, sandbox off
 Scripts/end-to-end.sh --sandboxed   # the same stack with the App Sandbox in force
-Scripts/end-to-end.sh --both        # 59 checks
+Scripts/end-to-end.sh --both        # both of the above
 ```
 
 It builds the project, generates its own test clip, compiles

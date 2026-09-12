@@ -137,15 +137,21 @@ public final class FFmpeg {
 
     // MARK: - Escape hatch
 
-    /// Runs a request this package does not model. `arguments` is the command line after the verb;
-    /// every file it needs must be listed in `files` so the service can be granted access to it.
     /// Runs a request this package does not model.
     ///
-    /// `arguments` is the command line after the verb. Every file it needs must be listed in
-    /// `files`; each is opened here and the path it appears under in `arguments` is replaced with
-    /// ffmpeg's "-fd N ... fd:" form, since the service reaches files only through descriptors.
-    public func run(request verb: String, arguments: [String], files: [URL] = []) throws -> Job {
-        let built = try RequestBuilder.raw(verb: verb, arguments: arguments, files: files)
+    /// `arguments` is the command line after the verb. Every file it touches has to be named here
+    /// as well - each is opened in this process and the path it appears under in `arguments` is
+    /// replaced with ffmpeg's "-fd N ... fd:" form, since the service reaches files only through
+    /// descriptors.
+    ///
+    /// - Parameters:
+    ///   - reading: files the command reads. Opened read-only.
+    ///   - writing: files the command writes. A destination listed under `reading` instead is
+    ///     opened read-only, and the job fails the moment ffmpeg tries to write to it.
+    public func run(request verb: String, arguments: [String],
+                    reading: [URL] = [], writing: [URL] = []) throws -> Job {
+        let built = try RequestBuilder.raw(verb: verb, arguments: arguments,
+                                           reading: reading, writing: writing)
         return start(built, totalDuration: nil)
     }
 

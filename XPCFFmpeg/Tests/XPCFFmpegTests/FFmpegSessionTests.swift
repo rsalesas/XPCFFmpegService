@@ -245,7 +245,7 @@ final class FFmpegSessionTests: XCTestCase {
     func testRunSubstitutesTokensForTheFilesItIsGiven() throws {
         let job = try ffmpeg.run(request: "-ffprobe",
                                  arguments: ["-show_packets", "-i", sandbox.existingFile.path],
-                                 files: [sandbox.existingFile])
+                                 reading: [sandbox.existingFile])
 
         let request = transport.invocations[0].request
         XCTAssertEqual(request.request, "-ffprobe")
@@ -266,7 +266,7 @@ final class FFmpegSessionTests: XCTestCase {
 
     func testRunRejectsAFileItCannotBookmark() {
         XCTAssertThrowsError(try ffmpeg.run(request: "-ffprobe", arguments: [],
-                                            files: [sandbox.url("nested/missing/x.mp4")])) { error in
+                                            reading: [sandbox.url("nested/missing/x.mp4")])) { error in
             guard case FFmpegError.inaccessibleFile = error else {
                 return XCTFail("wrong error: \(error)")
             }
