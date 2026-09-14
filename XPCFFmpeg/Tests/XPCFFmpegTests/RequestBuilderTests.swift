@@ -21,7 +21,10 @@ final class RequestBuilderTests: XCTestCase {
 
     /// Replaces descriptor tokens with a marker so an argument vector can be asserted on readably.
     private func readable(_ request: FFmpegRequest) -> [String] {
-        return request.arguments.map { $0.hasPrefix(FFmpegRequest.tokenPrefix) ? "<fd>" : $0 }
+        return request.arguments.map {
+            guard let token = $0.range(of: FFmpegRequest.tokenPrefix) else { return $0 }
+            return String($0[..<token.lowerBound]) + "<fd>"
+        }
     }
 
     func testSimpleTranscode() throws {
@@ -263,5 +266,21 @@ final class RequestBuilderTests: XCTestCase {
                        ["-fd", "<fd>", "-i", "fd:", "-f", "mp4", "-fd", "<fd>", "fd:"])
         XCTAssertFalse(built.request.arguments.contains(source.path))
         XCTAssertFalse(built.request.arguments.contains(output.path))
+    }
+
+    func testRawVideoDecodeWritesRGBFramesToAnEmbeddedPipeDescriptor() throws {
+        let options = RawVideoDecodeOptions(streamIndex: 2,
+                                            frameSize: FrameSize(width: 640, height: 360),
+                                            frameRate: 24)
+        let decoded = try RequestBuilder.rawVideoDecode(source: source, options: options)
+        defer { try? decoded.reader.close() }
+
+        XCTAssertEqual(options.bytesPerFrame, 640 * 360 * 3)
+        XCTAssertEqual(decoded.built.handles.count, 2, "source and pipe writer are descriptors")
+        XCTAssertEqual(readable(decoded.built.request),
+                       ["-fd", "<fd>", "-i", "fd:",
+                        "-map", "0:2", "-an", "-sn", "-dn",
+                        "-r", "24.0", "-s", "640x360", "-pix_fmt", "rgb24",
+                        "-f", "rawvideo", "pipe:<fd>"])
     }
 }

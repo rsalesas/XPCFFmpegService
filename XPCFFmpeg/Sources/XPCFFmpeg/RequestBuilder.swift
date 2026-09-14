@@ -564,6 +564,28 @@ struct RequestBuilder {
                      placeholders: builder.placeholders)
     }
 
+    /// Builds a video-only decode whose raw RGB frames are written directly to a caller-owned
+    /// pipe.  The pipe descriptor crosses the XPC boundary just like a file descriptor; pixels
+    /// therefore never pass through an XPC message or touch the filesystem.
+    static func rawVideoDecode(source: URL, options: RawVideoDecodeOptions) throws
+        -> (built: Built, reader: FileHandle) {
+        var builder = RequestBuilder()
+        let input = try builder.token(forReading: source)
+
+        let pipe = Pipe()
+        let output = builder.register(pipe.fileHandleForWriting)
+
+        builder.append("-fd", input, "-i", "fd:")
+        builder.append("-map", "0:\(options.streamIndex)", "-an", "-sn", "-dn")
+        builder.append("-r", String(options.frameRate))
+        builder.append("-s", options.frameSize.argument)
+        builder.append("-pix_fmt", "rgb24", "-f", "rawvideo", "pipe:\(output)")
+
+        let built = Built(request: FFmpegRequest(request: "-ffmpeg", arguments: builder.arguments),
+                          tokens: builder.tokens, handles: builder.handles, placeholders: [])
+        return (built, pipe.fileHandleForReading)
+    }
+
     static func probeRequest(for url: URL, options: ProbeOptions) throws -> Built {
         var builder = RequestBuilder()
 

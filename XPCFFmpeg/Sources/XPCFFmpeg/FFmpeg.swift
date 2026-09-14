@@ -155,6 +155,21 @@ public final class FFmpeg {
         return start(built, totalDuration: nil)
     }
 
+    // MARK: - Raw video
+
+    /// Starts a video-only decode to a pipe of tightly packed RGB24 frames.
+    ///
+    /// This is intended for native processing pipelines: read exactly
+    /// `options.bytesPerFrame` bytes for each frame from the returned decode's `reader`, while a
+    /// second task awaits `wait()`. The service gives FFmpeg the pipe's file descriptor directly,
+    /// so no decoded frames are materialised as image files or copied through XPC.
+    public func startRawVideoDecode(_ source: URL,
+                                    options: RawVideoDecodeOptions) throws -> RawVideoDecode {
+        let decoded = try RequestBuilder.rawVideoDecode(source: source, options: options)
+        let job = start(decoded.built, totalDuration: nil)
+        return RawVideoDecode(options: options, reader: decoded.reader, job: job)
+    }
+
     // MARK: - Plumbing
 
     private func probeDuration(of url: URL) async -> TimeInterval? {

@@ -252,7 +252,7 @@ public struct Bitrate: Equatable {
     var argument: String { "\(bitsPerSecond)" }
 }
 
-public struct FrameSize: Equatable {
+public struct FrameSize: Equatable, Sendable {
     public let width: Int
     public let height: Int
 

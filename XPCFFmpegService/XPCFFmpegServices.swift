@@ -116,18 +116,21 @@ class XPCFFmpegInvokeService: XPCServiceListenerDelegate, XPCFFmpegInvokeProtoco
                 continue
             }
 
-            guard argument.hasPrefix(FFmpegRequest.tokenPrefix) else {
-                arguments.append(argument)
-                continue
+            var substituted = argument
+            for (token, number) in numbers where substituted.contains(token) {
+                substituted = substituted.replacingOccurrences(of: token, with: number)
             }
 
-            guard let number = numbers[argument] else {
+            // Descriptor tokens normally occupy an argument on their own (the `-fd` value), but
+            // a pipe URL is necessarily `pipe:<descriptor>`. Reject any unmatched token in both
+            // forms rather than allowing a fabricated descriptor through to FFmpeg.
+            guard !substituted.contains(FFmpegRequest.tokenPrefix) else {
                 os_log("XPCFFmpegInvokeService.invoke->argument token has no matching descriptor")
                 handler(nil, ServiceError.inaccessibleFile)
                 return
             }
 
-            arguments.append(number)
+            arguments.append(substituted)
         }
 
         let connection = NSXPCConnection(listenerEndpoint: endpoint)

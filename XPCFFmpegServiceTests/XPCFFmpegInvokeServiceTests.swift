@@ -113,6 +113,22 @@ final class XPCFFmpegInvokeServiceTests: XCTestCase {
         XCTAssertFalse(argv.contains(existingFile.path), "no path should reach the child")
     }
 
+    func testTokensEmbeddedInPipeURLsBecomeTheDescriptorNumbersTheChildSees() throws {
+        let record = directory.appendingPathComponent("argv")
+        let task = stub(.recordingArguments(to: record))
+        let (token, handle) = try granted(existingFile, forWriting: true)
+
+        invoke(request(arguments: ["-f", "rawvideo", "pipe:\(token)"]), task: task,
+               tokens: [token], handles: [handle])
+
+        let argv = ((try? String(contentsOf: record, encoding: .utf8)) ?? "")
+            .split(separator: "\n").map(String.init)
+
+        XCTAssertEqual(argv, ["-ffprobe", "-f", "rawvideo",
+                              "pipe:\(ChildProcess.firstMappedDescriptor)"])
+        XCTAssertFalse(argv.contains(where: { $0.contains(FFmpegRequest.tokenPrefix) }))
+    }
+
     func testEachFileGetsItsOwnDescriptorNumber() throws {
         let second = directory.appendingPathComponent("in2.mov")
         try Data("second".utf8).write(to: second)
