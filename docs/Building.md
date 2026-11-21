@@ -80,7 +80,7 @@ rebuilt on demand.
 
 ## Current versions
 
-FFmpeg **n9.0.1**, deployment target **macOS 11.0**, Swift 5 language mode.
+FFmpeg **n9.0.1**, deployment target **macOS 12.0** (the oldest Xcode 27 builds for), Swift 5 language mode.
 
 ## Things that have bitten before
 

@@ -803,7 +803,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Set this to see all commands executing\n# set -e\n\n# Check that the FFmpeg submodule is cloned and initialized\nif [ ! -d \"${PROJECT_DIR}/FFmpeg/fftools\" ]; then\n    echo \"ERROR: FFmpeg submodule is missing or not initialized. Run: git submodule update --init\"\n    exit 1\nfi\n\n# Check that HomeBrew is installed\nif ! which brew > /dev/null; then\n    echo \"ERROR: brew is missing. Install it from https://brew.sh\"\n    exit 1\nfi\n\n# Check that pkg-config is installed\nif ! which pkg-config > /dev/null; then\n    echo \"ERROR: pkg-config is missing. Run: brew install pkg-config\"\n    exit 1\nfi\n\n# Every codec library FFmpeg is configured against below, as Homebrew formula : static\n# archive. Adding one here is not enough on its own - it also has to be linked into\n# FFmpegTask (OTHER_LDFLAGS on that target) and listed in NOTICE.\n#\n# All of these are BSD or LGPL, which leaves the combined work GPL v3 exactly as x264 and\n# x265 already make it. Nothing non-free (libfdk-aac) belongs in this list.\nCODEC_LIBRARIES=\"x264:libx264.a x265:libx265.a lame:libmp3lame.a libvpx:libvpx.a \\\n                 opus:libopus.a libogg:libogg.a libvorbis:libvorbis.a libvorbis:libvorbisenc.a \\\n                 aom:libaom.a libvmaf:libvmaf.a\"\n\nfor formula in nasm $(echo \"${CODEC_LIBRARIES}\" | tr \" \" \"\\n\" | cut -d: -f1 | sort -u); do\n    if ! brew ls --versions \"${formula}\" > /dev/null; then\n        echo \"ERROR: ${formula} is missing. Run: brew install ${formula}\"\n        exit 1\n    fi\ndone\n\n# Copy each static archive into lib/, where FFmpegTask links against it, and collect the\n# pkgconfig directories configure needs to find them. Homebrew's prefix differs between\n# Apple Silicon (/opt/homebrew) and Intel (/usr/local) Macs, so ask brew instead of hardcoding it.\nmkdir -p \"${PROJECT_DIR}/lib\"\nCODEC_PKG_CONFIG_PATH=\"\"\nCODEC_CFLAGS=\"\"\nCODEC_LDFLAGS=\"\"\nfor entry in $(echo \"${CODEC_LIBRARIES}\" | tr -s \" \\n\" \" \"); do\n    prefix=$(brew --prefix \"${entry%%:*}\")\n    ditto \"${prefix}/lib/${entry##*:}\" \"${PROJECT_DIR}/lib/${entry##*:}\"\n    CODEC_PKG_CONFIG_PATH=\"${CODEC_PKG_CONFIG_PATH}${prefix}/lib/pkgconfig:\"\n\n    # Not every library ships a pkg-config file - lame does not - so configure has to be\n    # pointed at the headers and archives directly. Two formulae can share a prefix, hence\n    # the check against adding the same -I twice.\n    case \" ${CODEC_CFLAGS} \" in\n        *\" -I${prefix}/include \"*) ;;\n        *) CODEC_CFLAGS=\"${CODEC_CFLAGS} -I${prefix}/include\"\n           CODEC_LDFLAGS=\"${CODEC_LDFLAGS} -L${prefix}/lib\" ;;\n    esac\ndone\n\n# Create the build directory if it doesn't already exist\nmkdir -p \"${CONFIGURATION_BUILD_DIR}\"\n\n# Build FFmpeg for whichever single architecture Xcode is currently targeting, matching\n# ONLY_ACTIVE_ARCH / ARCHS on the target so the static libs match what FFmpegTask links against.\nFFMPEG_ARCH=\"${ARCHS%% *}\"\n\n# Set the ffmpeg configuration\ncd \"${PROJECT_DIR}/FFmpeg\"\nexport PKG_CONFIG_PATH=\"${CODEC_PKG_CONFIG_PATH}\"\n./configure --prefix=\"${CONFIGURATION_BUILD_DIR}\" --arch=\"${FFMPEG_ARCH}\" cc=\"clang\" \\\n    --extra-cflags=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}${CODEC_CFLAGS}\" \\\n    --extra-ldflags=\"${CODEC_LDFLAGS}\" --pkg-config=\"pkg-config --static\" \\\n    --libdir=\"${PROJECT_DIR}/lib\" --incdir=\"${PROJECT_DIR}/include\" --shlibdir=\"${PROJECT_DIR}/Frameworks\" \\\n    --fatal-warnings --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3 \\\n    --disable-sdl2 --disable-xlib --disable-libxcb \\\n    --enable-libx264 --enable-libx265 \\\n    --enable-libmp3lame --enable-libvpx --enable-libopus --enable-libvorbis --enable-libaom \\\n    --disable-programs --disable-doc \\\n    || { echo \"ERROR: FFmpeg configure failed - see ${PROJECT_DIR}/FFmpeg/ffbuild/config.log\"; exit 1; }\n\n# Make the ffmpeg libraries and install them (headers land in include/, but Xcode's header\n# search path points straight at the FFmpeg source tree instead - see HEADER_SEARCH_PATHS -\n# since ffmpeg.c/ffprobe.c/fftools/*.c reach for internal headers that \"make install\" does not export)\nmake -j$(sysctl -n hw.ncpu) || exit 1\nmake install || exit 1\n\n# fftools/graph/graphprint.c (new in FFmpeg 8) embeds a debug HTML/CSS viewer that FFmpeg's own\n# Makefile normally generates via its bin2c tool. Since this target compiles the fftools sources\n# directly instead of going through that Makefile, regenerate the equivalent C sources here.\nmkdir -p \"${PROJECT_DIR}/generated\"\nxxd -i fftools/resources/graph.html \\\n    | sed -e 's/^unsigned char fftools_resources_graph_html\\[\\]/const unsigned char ff_graph_html_data[]/' \\\n          -e 's/^unsigned int fftools_resources_graph_html_len/const unsigned int ff_graph_html_len/' \\\n    > \"${PROJECT_DIR}/generated/graph_html.c\"\nxxd -i fftools/resources/graph.css \\\n    | sed -e 's/^unsigned char fftools_resources_graph_css\\[\\]/const unsigned char ff_graph_css_data[]/' \\\n          -e 's/^unsigned int fftools_resources_graph_css_len/const unsigned ff_graph_css_len/' \\\n    > \"${PROJECT_DIR}/generated/graph_css.c\"\n\ncd -\n\nexit 0\n";
+			shellScript = "# Set this to see all commands executing\n# set -e\n\n# Check that the FFmpeg submodule is cloned and initialized\nif [ ! -d \"${PROJECT_DIR}/FFmpeg/fftools\" ]; then\n    echo \"ERROR: FFmpeg submodule is missing or not initialized. Run: git submodule update --init\"\n    exit 1\nfi\n\n# Check that HomeBrew is installed\nif ! which brew > /dev/null; then\n    echo \"ERROR: brew is missing. Install it from https://brew.sh\"\n    exit 1\nfi\n\n# Check that pkg-config is installed\nif ! which pkg-config > /dev/null; then\n    echo \"ERROR: pkg-config is missing. Run: brew install pkg-config\"\n    exit 1\nfi\n\n# Every codec library FFmpeg is configured against below, as Homebrew formula : static\n# archive. Adding one here is not enough on its own - it also has to be linked into\n# FFmpegTask (OTHER_LDFLAGS on that target) and listed in NOTICE.\n#\n# All of these are BSD or LGPL, which leaves the combined work GPL v3 exactly as x264 and\n# x265 already make it. Nothing non-free (libfdk-aac) belongs in this list.\nCODEC_LIBRARIES=\"x264:libx264.a x265:libx265.a lame:libmp3lame.a libvpx:libvpx.a \\\n                 opus:libopus.a libogg:libogg.a libvorbis:libvorbis.a libvorbis:libvorbisenc.a \\\n                 aom:libaom.a libvmaf:libvmaf.a\"\n\nfor formula in nasm $(echo \"${CODEC_LIBRARIES}\" | tr \" \" \"\\n\" | cut -d: -f1 | sort -u); do\n    if ! brew ls --versions \"${formula}\" > /dev/null; then\n        echo \"ERROR: ${formula} is missing. Run: brew install ${formula}\"\n        exit 1\n    fi\ndone\n\n# Copy each static archive into lib/, where FFmpegTask links against it, and collect the\n# pkgconfig directories configure needs to find them. Homebrew's prefix differs between\n# Apple Silicon (/opt/homebrew) and Intel (/usr/local) Macs, so ask brew instead of hardcoding it.\nmkdir -p \"${PROJECT_DIR}/lib\"\nCODEC_PKG_CONFIG_PATH=\"\"\nCODEC_CFLAGS=\"\"\nCODEC_LDFLAGS=\"\"\nfor entry in $(echo \"${CODEC_LIBRARIES}\" | tr -s \" \\n\" \" \"); do\n    prefix=$(brew --prefix \"${entry%%:*}\")\n    ditto \"${prefix}/lib/${entry##*:}\" \"${PROJECT_DIR}/lib/${entry##*:}\"\n    CODEC_PKG_CONFIG_PATH=\"${CODEC_PKG_CONFIG_PATH}${prefix}/lib/pkgconfig:\"\n\n    # Not every library ships a pkg-config file - lame does not - so configure has to be\n    # pointed at the headers and archives directly. Two formulae can share a prefix, hence\n    # the check against adding the same -I twice.\n    case \" ${CODEC_CFLAGS} \" in\n        *\" -I${prefix}/include \"*) ;;\n        *) CODEC_CFLAGS=\"${CODEC_CFLAGS} -I${prefix}/include\"\n           CODEC_LDFLAGS=\"${CODEC_LDFLAGS} -L${prefix}/lib\" ;;\n    esac\ndone\n\n# Create the build directory if it doesn't already exist\nmkdir -p \"${CONFIGURATION_BUILD_DIR}\"\n\n# Build FFmpeg for whichever single architecture Xcode is currently targeting, matching\n# ONLY_ACTIVE_ARCH / ARCHS on the target so the static libs match what FFmpegTask links against.\nFFMPEG_ARCH=\"${ARCHS%% *}\"\n\n# Set the ffmpeg configuration\ncd \"${PROJECT_DIR}/FFmpeg\"\nexport PKG_CONFIG_PATH=\"${CODEC_PKG_CONFIG_PATH}\"\n./configure --prefix=\"${CONFIGURATION_BUILD_DIR}\" --arch=\"${FFMPEG_ARCH}\" cc=\"clang\" \\\n    --extra-cflags=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}${CODEC_CFLAGS}\" \\\n    --extra-ldflags=\"${CODEC_LDFLAGS}\" --pkg-config=\"pkg-config --static\" \\\n    --libdir=\"${PROJECT_DIR}/lib\" --incdir=\"${PROJECT_DIR}/include\" --shlibdir=\"${PROJECT_DIR}/Frameworks\" \\\n    --fatal-warnings --disable-shared --enable-static --enable-pthreads --enable-gpl --enable-version3 \\\n    --disable-sdl2 --disable-xlib --disable-libxcb \\\n    --enable-libx264 --enable-libx265 \\\n    --enable-libmp3lame --enable-libvpx --enable-libopus --enable-libvorbis --enable-libaom \\\n    --disable-programs --disable-doc \\\n    || { echo \"ERROR: FFmpeg configure failed - see ${PROJECT_DIR}/FFmpeg/ffbuild/config.log\"; exit 1; }\n\n# Make the ffmpeg libraries and install them (headers land in include/, but Xcode's header\n# search path points straight at the FFmpeg source tree instead - see HEADER_SEARCH_PATHS -\n# since ffmpeg.c/ffprobe.c/fftools/*.c reach for internal headers that \"make install\" does not export)\n# FFmpeg builds in-tree, and its .d dependency files record absolute SDK header paths. After an\n# Xcode update the old SDK is gone and make stops with \"No rule to make target\n# .../MacOSX<old>.sdk/...\". Start from clean whenever the SDK, deployment target or arch changes.\nBUILD_STAMP=\"${SDKROOT}|${MACOSX_DEPLOYMENT_TARGET}|${FFMPEG_ARCH}\"\nSTAMP_FILE=\"${PROJECT_DIR}/lib/.ffmpeg-build-stamp\"\nif [ \"$(cat \"${STAMP_FILE}\" 2>/dev/null)\" != \"${BUILD_STAMP}\" ]; then\n    echo \"FFmpeg: SDK, deployment target or arch changed - rebuilding from clean\"\n    make clean > /dev/null\nfi\n\nmake -j$(sysctl -n hw.ncpu) || exit 1\necho \"${BUILD_STAMP}\" > \"${STAMP_FILE}\"\nmake install || exit 1\n\n# fftools/graph/graphprint.c (new in FFmpeg 8) embeds a debug HTML/CSS viewer that FFmpeg's own\n# Makefile normally generates via its bin2c tool. Since this target compiles the fftools sources\n# directly instead of going through that Makefile, regenerate the equivalent C sources here.\nmkdir -p \"${PROJECT_DIR}/generated\"\nxxd -i fftools/resources/graph.html \\\n    | sed -e 's/^unsigned char fftools_resources_graph_html\\[\\]/const unsigned char ff_graph_html_data[]/' \\\n          -e 's/^unsigned int fftools_resources_graph_html_len/const unsigned int ff_graph_html_len/' \\\n    > \"${PROJECT_DIR}/generated/graph_html.c\"\nxxd -i fftools/resources/graph.css \\\n    | sed -e 's/^unsigned char fftools_resources_graph_css\\[\\]/const unsigned char ff_graph_css_data[]/' \\\n          -e 's/^unsigned int fftools_resources_graph_css_len/const unsigned ff_graph_css_len/' \\\n    > \"${PROJECT_DIR}/generated/graph_css.c\"\n\ncd -\n\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1005,7 +1005,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1035,7 +1035,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.TestXPCFFmpegService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1097,7 +1097,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1151,7 +1151,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1192,7 +1192,7 @@
 					"-lbz2",
 					"-lc++",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1234,7 +1234,7 @@
 					"-lbz2",
 					"-lc++",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTask;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1254,7 +1254,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.XPCFFmpegServiceTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1270,7 +1270,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.XPCFFmpegServiceTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1285,7 +1285,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTaskTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1301,7 +1301,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siliconink.FFmpegTaskTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
