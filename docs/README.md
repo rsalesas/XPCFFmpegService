@@ -38,4 +38,4 @@ Read [Usage](Usage.md) if you want to call it, [Architecture](Architecture.md) i
 why it is built this way. [Building](Building.md) is worth a skim first either way — the first build
 compiles all of FFmpeg and takes a few minutes.
 
-Current: FFmpeg **n9.0.1**, macOS **11.0** and later.
+Current: FFmpeg **n9.0.1**, macOS **12.0** and later.

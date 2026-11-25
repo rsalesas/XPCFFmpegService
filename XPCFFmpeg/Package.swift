@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "XPCFFmpeg",
-    platforms: [.macOS(.v11)],
+    platforms: [.macOS(.v12)],
     products: [
         .library(name: "XPCFFmpeg", type: .dynamic, targets: ["XPCFFmpeg"]),
     ],
